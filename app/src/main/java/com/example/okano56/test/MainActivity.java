@@ -19,7 +19,7 @@ public class MainActivity extends ActionBarActivity{
 
         //ボタンのリスナーセット
         Button btn = (Button)findViewById(R.id.button);
-        btn.setOnClickListener(clicked);
+        btn.setOnClickListener(clicked);   //test
     }
 
     //ボタンの処理
