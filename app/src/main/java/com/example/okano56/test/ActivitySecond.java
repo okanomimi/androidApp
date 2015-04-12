@@ -1,6 +1,5 @@
 package com.example.okano56.test;
 
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
@@ -11,43 +10,45 @@ import android.view.View;
 import android.widget.Button;
 
 
-public class MainActivity extends ActionBarActivity{
+public class ActivitySecond extends ActionBarActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_second);
 
 //        //ボタンのリスナーセット
 //        Button btn = (Button)findViewById(R.id.button);
 //        btn.setOnClickListener(clicked);   //test dada
     }
+
     public void onClick(View view){
         switch (view.getId()){
-            case R.id.btnToSecond:
-                Intent intent = new Intent(this,ActivitySecond.class);
+            case R.id.btnToFirst:
+                Intent intent = new Intent(this, MainActivity.class);
                 startActivity(intent);
                 break;
         }
     }
-//    //ボタンの処理
+    //ボタンの処理
 //    public View.OnClickListener clicked = new View.OnClickListener() {
 //        @Override
 //        public void onClick(View v) {
 //            switch (v.getId()){
-//                case R.id.btnToSecond:
-//                    Intent intent = new Intent(this,ActivitySecond.class);
+//                case R.id.btnToFirst:
+//                    Intent intent = new Intent(this,MainActivity.class);
 //                    startActivity(intent);
 //                    break;
 //            }
 //            Log.v("Button", "onClick");
-//       }
+//        }
 //    };
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
+        getMenuInflater().inflate(R.menu.menu_activity_second, menu);
         return true;
     }
 
