@@ -10,6 +10,8 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 
+import static com.example.okano56.test.R.id.buttonToDBSite;
+
 
 public class MainActivity extends ActionBarActivity{
 
@@ -28,6 +30,10 @@ public class MainActivity extends ActionBarActivity{
                 //Intent intent = new Intent(this,ActivitySecond.class);
                 Intent intent = new Intent(this,MapsActivity.class);
                 startActivity(intent);
+                break;
+            case buttonToDBSite:
+                Intent intent2 = new Intent(this,DBSampleA.class);
+                startActivity(intent2);
                 break;
         }
     }

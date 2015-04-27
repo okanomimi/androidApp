@@ -66,12 +66,12 @@ public class MapsActivity extends FragmentActivity {
      */
     private void setUpMap() {
         mMap.addMarker(new MarkerOptions().position(new LatLng(43, 31)).title("Marker"));
-        mMap.addMarker(new MarkerOptions().position(new LatLng(-33.87365,151.20689)).title("Marker"));
+        mMap.addMarker(new MarkerOptions().position(new LatLng(35.469716,139.629183)).title("Marker"));
 
-        /*CameraPosition sydney = new CameraPosition.Builder()
-                .target(new LatLng(-33.87365,151.20689)).zoom(15.5f)
+        CameraPosition sydney = new CameraPosition.Builder()
+                .target(new LatLng(35.469716,139.629183)).zoom(15.5f)
                 .bearing(0).tilt(25).build();
-        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(sydney));*/
+        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(sydney));
 
         mMap.setTrafficEnabled(true);
 
@@ -85,8 +85,8 @@ public class MapsActivity extends FragmentActivity {
         public void activate(LocationSource.OnLocationChangedListener listener) {
             // 好きな緯度・経度を設定した Location を作成
             Location location = new Location("MyLocation");
-            location.setLatitude(-33.87365);
-            location.setLongitude(151.20689);
+            location.setLatitude(35.469716);
+            location.setLongitude(139.629183);
             location.setAccuracy(100); // 精度
             // Location に設定
             listener.onLocationChanged(location);
