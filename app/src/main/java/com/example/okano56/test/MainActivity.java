@@ -25,7 +25,8 @@ public class MainActivity extends ActionBarActivity{
     public void onClick(View view){
         switch (view.getId()){
             case R.id.btnToSecond:
-                Intent intent = new Intent(this,ActivitySecond.class);
+                //Intent intent = new Intent(this,ActivitySecond.class);
+                Intent intent = new Intent(this,MapsActivity.class);
                 startActivity(intent);
                 break;
         }
