@@ -1,7 +1,10 @@
 package com.example.okano56.test;
 
 import android.app.Service;
+import android.content.ContentValues;
 import android.content.Context;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
@@ -27,17 +30,22 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import static java.lang.String.valueOf;
+
 public class MapsActivity extends FragmentActivity implements LocationListener{
 
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
-
     private static final String TAG = MapsActivity.class.getSimpleName();
     // 更新時間(目安)
     private static final int LOCATION_UPDATE_MIN_TIME = 0;
     // 更新距離(目安)
     private static final int LOCATION_UPDATE_MIN_DISTANCE = 0;
-
     private LocationManager mLocationManager;
+
+   private  MyDBHelper myhelper ;   //to create database
+    private  static SQLiteDatabase db;    //database
+    private String str;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -45,6 +53,11 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         Log.e(TAG, "onLocationChanged.");
         //setContentView(R.layout.acivity_map2);
         setContentView(R.layout.activity_maps);
+
+        //create database helper ??
+        myhelper = new MyDBHelper(this);
+        db = myhelper.getWritableDatabase();
+        //db.delete("test",null,null);  //clear database tables
 
         mLocationManager = (LocationManager)this.getSystemService(Service.LOCATION_SERVICE);  //位置データを取る用
         setUpMapIfNeeded();
@@ -63,12 +76,27 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
     public void onLocationChanged(Location location) {
         Log.e(TAG, "onLocationChanged.");
         //showLocation(location);
+        String lat = valueOf(location.getLatitude());
+        String lot = valueOf(location.getLongitude());
+        ContentValues values = new ContentValues();
+        values.put("comment",lat);
+        db.insert("testtb",null , values);
+
+        //データベースのデータを読み取って表示する。
+        Cursor c = db.query("testtb", new String[] {"_id", "comment"}, null, null, null, null, null);
+        str = "データベース一覧\n";
+        while(c.moveToNext()) {
+            str += c.getString(c.getColumnIndex("_id")) + ":" +
+                    c.getString(c.getColumnIndex("comment")) + "\n";
+        }
+        Log.e(TAG,str);
     }
 
     // Called when the provider status changed.
     @Override
     public void onStatusChanged(String provider, int status, Bundle extras) {
         Log.e(TAG, "onStatusChanged.");
+
     }
 
     @Override
@@ -94,7 +122,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
 
     private void showNetworkEnabled(boolean isNetworkEnabled) {
         TextView textView = (TextView)findViewById(R.id.enabled);
-        textView.setText("NetworkEnabled : " + String.valueOf(isNetworkEnabled));
+        textView.setText("NetworkEnabled : " + valueOf(isNetworkEnabled));
     }
 
     /**
@@ -162,6 +190,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
                 .bearing(0).tilt(25).build();
         mMap.animateCamera(CameraUpdateFactory.newCameraPosition(sydney));
         mMap.setMyLocationEnabled(true);  //display data on the map
+
 
     }
 
