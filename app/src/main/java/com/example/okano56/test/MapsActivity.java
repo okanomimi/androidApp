@@ -30,8 +30,6 @@ import java.util.Date;
 public class MapsActivity extends FragmentActivity implements LocationListener{
 
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
-    private static Location mMyLocation = null;
-    private static boolean mMyLocationCentering = false;
 
     private static final String TAG = MapsActivity.class.getSimpleName();
     // 更新時間(目安)
@@ -48,7 +46,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         //setContentView(R.layout.acivity_map2);
         setContentView(R.layout.activity_maps);
 
-        mLocationManager = (LocationManager)this.getSystemService(Service.LOCATION_SERVICE);
+        mLocationManager = (LocationManager)this.getSystemService(Service.LOCATION_SERVICE);  //位置データを取る用
         setUpMapIfNeeded();
 
         //requestLocationUpdates();
@@ -57,106 +55,32 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
     @Override
     protected void onResume() {
         super.onResume();
-        //setUpMapIfNeeded();
-        //setUpLocation(true);
     }
+
+    //
     // Called when the location has changed.
     @Override
     public void onLocationChanged(Location location) {
         Log.e(TAG, "onLocationChanged.");
         //showLocation(location);
-
     }
 
     // Called when the provider status changed.
     @Override
     public void onStatusChanged(String provider, int status, Bundle extras) {
         Log.e(TAG, "onStatusChanged.");
-
-        //showProvider(provider);
-        /*switch (status) {
-            case LocationProvider.OUT_OF_SERVICE:
-                // if the provider is out of service, and this is not expected to change in the near future.
-                String outOfServiceMessage = provider +"が圏外になっていて取得できません。";
-                showMessage(outOfServiceMessage);
-                break;
-            case LocationProvider.TEMPORARILY_UNAVAILABLE:
-                // if the provider is temporarily unavailable but is expected to be available shortly.
-                String temporarilyUnavailableMessage = "一時的に" + provider + "が利用できません。もしかしたらすぐに利用できるようになるかもです。";
-                showMessage(temporarilyUnavailableMessage);
-                break;
-            case LocationProvider.AVAILABLE:
-                // if the provider is currently available.
-                if (provider.equals(LocationManager.NETWORK_PROVIDER)) {
-                    String availableMessage = provider + "が利用可能になりました。";
-                    showMessage(availableMessage);
-                    requestLocationUpdates();
-                }
-                break;
-        }
-        */
     }
-    // Called when the provider is enabled by the user.
+
     @Override
     public void onProviderEnabled(String provider) {
-        Log.e(TAG, "onProviderEnabled.");
-        String message = provider + "が有効になりました。";
-        showMessage(message);
-        showProvider(provider);
-        if (provider.equals(LocationManager.NETWORK_PROVIDER)) {
-            requestLocationUpdates();
-        }
+
     }
 
-    // Called when the provider is disabled by the user.
     @Override
     public void onProviderDisabled(String provider) {
-        Log.e(TAG, "onProviderDisabled.");
-        showProvider(provider);
-        if (provider.equals(LocationManager.NETWORK_PROVIDER)) {
-            String message = provider + "が無効になってしまいました。";
-            showMessage(message);
-        }
+
     }
 
-    private void requestLocationUpdates() {
-        Log.e(TAG, "requestLocationUpdates()");
-        showProvider(LocationManager.NETWORK_PROVIDER);
-        boolean isNetworkEnabled = mLocationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
-        showNetworkEnabled(isNetworkEnabled);
-        if (isNetworkEnabled) {
-            showMessage("DDDDDDDD");
-            mLocationManager.requestLocationUpdates(
-                    //LocationManager.NETWORK_PROVIDER,
-                    LocationManager.GPS_PROVIDER,
-                    LOCATION_UPDATE_MIN_TIME,
-                    LOCATION_UPDATE_MIN_DISTANCE,
-                    this);
-            //Location location = mLocationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-            Location location = mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-            showMessage("location"+location);
-            if (location != null) {
-                showLocation(location);
-            }
-        } else {
-            String message = "Networkが無効になっています。";
-            showMessage(message);
-        }
-    }
-    private void showLocation(Location location) {
-        double longitude = location.getLongitude();
-        double latitude = location.getLatitude();
-        long time = location.getTime();
-        Date date = new Date(time);
-        DateFormat formatter = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss:SSS");
-        String dateFormatted = formatter.format(date);
-        TextView longitudeTextView = (TextView)findViewById(R.id.longitude);
-        longitudeTextView.setText("Longitude : " + String.valueOf(longitude));
-        TextView latitudeTextView = (TextView)findViewById(R.id.latitude);
-        latitudeTextView.setText("Latitude : " + String.valueOf(latitude));
-        TextView geoTimeTextView = (TextView)findViewById(R.id.geo_time);
-        geoTimeTextView.setText("取得時間 : " + dateFormatted);
-    }
 
     private void showMessage(String message) {
         TextView textView = (TextView)findViewById(R.id.message);
@@ -172,6 +96,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         TextView textView = (TextView)findViewById(R.id.enabled);
         textView.setText("NetworkEnabled : " + String.valueOf(isNetworkEnabled));
     }
+
     /**
      * Sets up the map if it is possible to do so (i.e., the Google Play services APK is correctly
      * installed) and the map has not already been instantiated.. This will ensure that we only ever
@@ -187,6 +112,8 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
      * stopped or paused), {@link #onCreate(Bundle)} may not be called again so we should call this
      * method in {@link #onResume()} to guarantee that it will be called.
      */
+
+    //this method create map instance . maybe
     private void setUpMapIfNeeded() {
         // Do a null check to confirm that we have not already instantiated the map.
         if (mMap == null) {
@@ -211,36 +138,34 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         //mMap.addMarker(new MarkerOptions().position(new LatLng(43, 31)).title("Marker"));
         //mMap.addMarker(new MarkerOptions().position(new LatLng(35.469716,139.629183)).title("Marker"));
 
-        /*CameraPosition sydney = new CameraPosition.Builder()
-                .target(new LatLng(35.469716,139.629183)).zoom(15.5f)
-                .bearing(0).tilt(25).build();
-        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(sydney));
-*/
-        mMap.setTrafficEnabled(true);
+        mMap.setTrafficEnabled(true); //display traffic data
 
-        MyLocationSource source = new MyLocationSource();
+//        MyLocationSource source = new MyLocationSource();
         //mMap.setLocationSource(source);
 
+        //requestLocation data
         mLocationManager.requestLocationUpdates(
                     //LocationManager.NETWORK_PROVIDER,
                     LocationManager.GPS_PROVIDER,
                     LOCATION_UPDATE_MIN_TIME,
                     LOCATION_UPDATE_MIN_DISTANCE,
                     this);
-            //Location location = mLocationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-            Location location = mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
 
+        //get location data
+         Location location = mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+
+        //check location data
         Log.e(TAG,location.getLatitude()+",########"+location.getLongitude());
         mMap.addMarker(new MarkerOptions().position(new LatLng(location.getLatitude(),location.getLongitude())).title("okano"));
          CameraPosition sydney = new CameraPosition.Builder()
                 .target(new LatLng(location.getLatitude(),location.getLongitude())).zoom(15.5f)
                 .bearing(0).tilt(25).build();
         mMap.animateCamera(CameraUpdateFactory.newCameraPosition(sydney));
-
-        mMap.setMyLocationEnabled(true);
+        mMap.setMyLocationEnabled(true);  //display data on the map
 
     }
 
+    //I dont understand this class.maybe it's class postion data ??
     public class MyLocationSource implements LocationSource {
         @Override
         public void activate(LocationSource.OnLocationChangedListener listener) {
