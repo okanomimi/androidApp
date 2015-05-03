@@ -45,11 +45,13 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         super.onCreate(savedInstanceState);
 
         Log.e(TAG, "onLocationChanged.");
-        setContentView(R.layout.acivity_map2);
-        //setUpMapIfNeeded();
+        //setContentView(R.layout.acivity_map2);
+        setContentView(R.layout.activity_maps);
 
         mLocationManager = (LocationManager)this.getSystemService(Service.LOCATION_SERVICE);
-        requestLocationUpdates();
+        setUpMapIfNeeded();
+
+        //requestLocationUpdates();
     }
 
     @Override
@@ -62,15 +64,17 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
     @Override
     public void onLocationChanged(Location location) {
         Log.e(TAG, "onLocationChanged.");
-        showLocation(location);
+        //showLocation(location);
+
     }
 
     // Called when the provider status changed.
     @Override
     public void onStatusChanged(String provider, int status, Bundle extras) {
         Log.e(TAG, "onStatusChanged.");
-        showProvider(provider);
-        switch (status) {
+
+        //showProvider(provider);
+        /*switch (status) {
             case LocationProvider.OUT_OF_SERVICE:
                 // if the provider is out of service, and this is not expected to change in the near future.
                 String outOfServiceMessage = provider +"が圏外になっていて取得できません。";
@@ -90,6 +94,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
                 }
                 break;
         }
+        */
     }
     // Called when the provider is enabled by the user.
     @Override
@@ -214,8 +219,23 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         mMap.setTrafficEnabled(true);
 
         MyLocationSource source = new MyLocationSource();
-        mMap.setLocationSource(source);
+        //mMap.setLocationSource(source);
 
+        mLocationManager.requestLocationUpdates(
+                    //LocationManager.NETWORK_PROVIDER,
+                    LocationManager.GPS_PROVIDER,
+                    LOCATION_UPDATE_MIN_TIME,
+                    LOCATION_UPDATE_MIN_DISTANCE,
+                    this);
+            //Location location = mLocationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+            Location location = mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+
+        Log.e(TAG,location.getLatitude()+",########"+location.getLongitude());
+        mMap.addMarker(new MarkerOptions().position(new LatLng(location.getLatitude(),location.getLongitude())).title("okano"));
+         CameraPosition sydney = new CameraPosition.Builder()
+                .target(new LatLng(location.getLatitude(),location.getLongitude())).zoom(15.5f)
+                .bearing(0).tilt(25).build();
+        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(sydney));
 
         mMap.setMyLocationEnabled(true);
 
@@ -224,7 +244,9 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
     public class MyLocationSource implements LocationSource {
         @Override
         public void activate(LocationSource.OnLocationChangedListener listener) {
+
             // 好きな緯度・経度を設定した Location を作成
+
             Location location = new Location("MyLocation");
             //location.setLatitude(35.469716);
             location.setLatitude(location.getLatitude());
