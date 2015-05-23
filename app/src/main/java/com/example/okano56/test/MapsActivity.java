@@ -79,15 +79,21 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         String lat = valueOf(location.getLatitude());
         String lot = valueOf(location.getLongitude());
         ContentValues values = new ContentValues();
-        values.put("comment",lat);
+        values.put("lat",lat);
+        values.put("lot",lot);
+//        values.put("lat",lot);
         db.insert("testtb",null , values);
 
         //データベースのデータを読み取って表示する。
-        Cursor c = db.query("testtb", new String[] {"_id", "comment"}, null, null, null, null, null);
+//        Cursor c = db.query("testtb", new String[] {"_id", "lat","lot"}, null, null, null, null, null);
+//        Cursor c = db.query("testtb", new String[] {"_id", "lat","lot"}, null, null, null, null, null);
+        Cursor c = db.query("testtb",null, null, null, null, null, null);
         str = "データベース一覧\n";
         while(c.moveToNext()) {
             str += c.getString(c.getColumnIndex("_id")) + ":" +
-                    c.getString(c.getColumnIndex("comment")) + "\n";
+                    c.getString(c.getColumnIndex("lat")) + ":"+
+                    c.getString(c.getColumnIndex("lot")) + "\n";
+//            c.getString(c.getColumnIndex("lat")) + "\n";
         }
         Log.e(TAG,str);
     }

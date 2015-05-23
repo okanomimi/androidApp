@@ -11,12 +11,14 @@ public class MyDBHelper extends SQLiteOpenHelper {
 
     public MyDBHelper(Context context) {
         //DBを作成
-        super(context, "testdb", null , 1);
+        super(context, "testtb", null , 1);
     }
 
     @Override
     public void onCreate(SQLiteDatabase db) {
-        db.execSQL("CREATE TABLE testtb (_id INTEGER PRIMARY KEY, comment TEXT)");
+//        db.execSQL("CREATE TABLE testtb (_id INTEGER PRIMARY KEY, comment TEXT)");
+//        db.execSQL("CREATE TABLE testtb (_id INTEGER PRIMARY KEY, lat TEXT)");
+        db.execSQL("CREATE TABLE testtb (_id INTEGER PRIMARY KEY,lat TEXT,lot TEXT);");
     }
 
     @Override
