@@ -3,6 +3,7 @@ package com.example.okano56.test;
 import android.app.Service;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.location.Criteria;
@@ -13,9 +14,11 @@ import android.location.LocationProvider;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
-
+import android.view.View;
+import android.view.View.OnClickListener;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -26,8 +29,10 @@ import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import java.sql.Array;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 
 import static java.lang.String.valueOf;
@@ -46,9 +51,26 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
     private  static SQLiteDatabase db;    //database
     private String str;
 
+    private ArrayList locationList;
+
+
+    //locationデータ保存用のデータクラス
+    public class LocationData {
+        String lat;
+        String lot;
+        public LocationData(String lat,String lot) {
+            this.lat = lat;
+            this.lot = lot;
+        }
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        locationList = new ArrayList<LocationData>();
+        LocationData fisrt = new LocationData("0","0");
+        locationList.add(fisrt);
+
 
         Log.e(TAG, "onLocationChanged.");
         //setContentView(R.layout.acivity_map2);
@@ -61,6 +83,23 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
 
         mLocationManager = (LocationManager)this.getSystemService(Service.LOCATION_SERVICE);  //位置データを取る用
         setUpMapIfNeeded();
+
+        Button saveButton = (Button) findViewById(R.id.saveMapData);  //
+        saveButton.setOnClickListener(new OnClickListener() {
+                                          @Override
+                                          public void onClick(View v){
+                                              Log.e(TAG,"dadadafgagaga");
+
+                                              LocationData lastLocation = (LocationData) locationList.get(locationList.size()-1);
+                                               ContentValues values = new ContentValues();
+//                                                values.put("lat",lastLocation.lat);
+                                                values.put("lat","22");
+//                                                values.put("lot",lastLocation.lot);
+                                                values.put("lot","44");
+                                                db.insert("testtb",null , values);
+                                          }
+                                      }
+        );
 
         //requestLocationUpdates();
     }
@@ -78,11 +117,13 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         //showLocation(location);
         String lat = valueOf(location.getLatitude());
         String lot = valueOf(location.getLongitude());
-        ContentValues values = new ContentValues();
-        values.put("lat",lat);
-        values.put("lot",lot);
-//        values.put("lat",lot);
-        db.insert("testtb",null , values);
+
+        //もしこの座標がその前の座標と一致していなければ
+            LocationData lastLocation = (LocationData) locationList.get(locationList.size() - 1);
+            if ((lastLocation.lat != lat) || (lastLocation.lot != lot)) {
+                LocationData locationData = new LocationData(lat, lot);
+                locationList.add(locationData);
+            }
 
         //データベースのデータを読み取って表示する。
 //        Cursor c = db.query("testtb", new String[] {"_id", "lat","lot"}, null, null, null, null, null);
@@ -189,7 +230,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
          Location location = mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
 
         //check location data
-        Log.e(TAG,location.getLatitude()+",########"+location.getLongitude());
+        Log.e(TAG, location.getLatitude() + ",########" + location.getLongitude());
         mMap.addMarker(new MarkerOptions().position(new LatLng(location.getLatitude(),location.getLongitude())).title("okano"));
          CameraPosition sydney = new CameraPosition.Builder()
                 .target(new LatLng(location.getLatitude(),location.getLongitude())).zoom(15.5f)
