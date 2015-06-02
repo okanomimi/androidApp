@@ -71,6 +71,8 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         LocationData fisrt = new LocationData("0","0");
         locationList.add(fisrt);
 
+        deleteDatabase("testtb");
+
 
         Log.e(TAG, "onLocationChanged.");
         //setContentView(R.layout.acivity_map2);
@@ -92,15 +94,30 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
 
                                               LocationData lastLocation = (LocationData) locationList.get(locationList.size()-1);
                                                ContentValues values = new ContentValues();
-//                                                values.put("lat",lastLocation.lat);
-                                                values.put("lat","22");
-//                                                values.put("lot",lastLocation.lot);
-                                                values.put("lot","44");
+                                                values.put("lat",lastLocation.lat);
+//                                                values.put("lat","22");
+                                                values.put("lot",lastLocation.lot);
+//                                                values.put("lot","44");
                                                 db.insert("testtb",null , values);
                                           }
                                       }
         );
 
+        Button outputButton = (Button) findViewById(R.id.openMapData);      //マップデータを表示するボタンの実装
+        outputButton.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+         Cursor c = db.query("testtb",null, null, null, null, null, null);
+        str = "データベース一覧\n";
+        while(c.moveToNext()) {
+            str += c.getString(c.getColumnIndex("_id")) + ":" +
+                    c.getString(c.getColumnIndex("lat")) + ":"+
+                    c.getString(c.getColumnIndex("lot")) + "\n";
+//            c.getString(c.getColumnIndex("lat")) + "\n";
+        }
+        Log.e(TAG,str);
+            }
+        });
         //requestLocationUpdates();
     }
 
@@ -128,15 +145,16 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         //データベースのデータを読み取って表示する。
 //        Cursor c = db.query("testtb", new String[] {"_id", "lat","lot"}, null, null, null, null, null);
 //        Cursor c = db.query("testtb", new String[] {"_id", "lat","lot"}, null, null, null, null, null);
-        Cursor c = db.query("testtb",null, null, null, null, null, null);
-        str = "データベース一覧\n";
-        while(c.moveToNext()) {
-            str += c.getString(c.getColumnIndex("_id")) + ":" +
-                    c.getString(c.getColumnIndex("lat")) + ":"+
-                    c.getString(c.getColumnIndex("lot")) + "\n";
-//            c.getString(c.getColumnIndex("lat")) + "\n";
-        }
-        Log.e(TAG,str);
+
+//        Cursor c = db.query("testtb",null, null, null, null, null, null);
+//        str = "データベース一覧\n";
+//        while(c.moveToNext()) {
+//            str += c.getString(c.getColumnIndex("_id")) + ":" +
+//                    c.getString(c.getColumnIndex("lat")) + ":"+
+//                    c.getString(c.getColumnIndex("lot")) + "\n";
+////            c.getString(c.getColumnIndex("lat")) + "\n";
+//        }
+//        Log.e(TAG,str);
     }
 
     // Called when the provider status changed.
