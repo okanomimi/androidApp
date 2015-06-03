@@ -18,16 +18,22 @@
         android:weightSum="1">
 
         <Button
-            android:layout_width="188dp"
+            android:layout_width="123dp"
             android:layout_height="83dp"
             android:text="保存"
             android:id="@+id/saveMapData" />
 
         <Button
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="81dp"
             android:text="データ表示"
             android:id="@+id/openMapData" />
+
+        <Button
+            android:layout_width="151dp"
+            android:layout_height="65dp"
+            android:text="データ削除"
+            android:id="@+id/deleteButton" />
     </LinearLayout>
 
     <fragment

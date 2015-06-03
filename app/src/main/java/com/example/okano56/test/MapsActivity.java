@@ -47,7 +47,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
     private static final int LOCATION_UPDATE_MIN_DISTANCE = 0;
     private LocationManager mLocationManager;
 
-   private  MyDBHelper myhelper ;   //to create database
+    private  MyDBHelper myhelper ;   //to create database
     private  static SQLiteDatabase db;    //database
     private String str;
 
@@ -93,12 +93,12 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
                                               Log.e(TAG,"dadadafgagaga");
 
                                               LocationData lastLocation = (LocationData) locationList.get(locationList.size()-1);
-                                               ContentValues values = new ContentValues();
-                                                values.put("lat",lastLocation.lat);
+                                              ContentValues values = new ContentValues();
+                                              values.put("lat",lastLocation.lat);
 //                                                values.put("lat","22");
-                                                values.put("lot",lastLocation.lot);
+                                              values.put("lot",lastLocation.lot);
 //                                                values.put("lot","44");
-                                                db.insert("testtb",null , values);
+                                              db.insert("testtb",null , values);
                                           }
                                       }
         );
@@ -107,16 +107,49 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         outputButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-         Cursor c = db.query("testtb",null, null, null, null, null, null);
-        str = "データベース一覧\n";
-        while(c.moveToNext()) {
-            str += c.getString(c.getColumnIndex("_id")) + ":" +
-                    c.getString(c.getColumnIndex("lat")) + ":"+
-                    c.getString(c.getColumnIndex("lot")) + "\n";
+                Cursor c = db.query("testtb",null, null, null, null, null, null);
+                str = "データベース一覧\n";
+                while(c.moveToNext()) {
+                    str += c.getString(c.getColumnIndex("_id")) + ":" +
+                            c.getString(c.getColumnIndex("lat")) + ":"+
+                            c.getString(c.getColumnIndex("lot")) + "\n";
 //            c.getString(c.getColumnIndex("lat")) + "\n";
-        }
-        Log.e(TAG,str);
+                }
+                Log.e(TAG,str);
             }
+        });
+
+        Button deleteButton = (Button) findViewById(R.id.deleteButton);  //データベースのすべてのデータを削除する
+        deleteButton.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //deleteDatabase("testtb");
+                //delete all data in database
+                Cursor c = db.query("testtb",null, null, null, null, null, null);
+                String id;
+                while(c.moveToNext()) {
+                    id= c.getString(c.getColumnIndex("_id"));
+                    db.delete("testtb", "_id="+id, null);
+                }
+
+                locationList = new ArrayList<LocationData>();
+                LocationData fisrt = new LocationData("0","0");
+                locationList.add(fisrt);
+                str = "データベースを削除しました";
+                Log.e(TAG,str);
+
+                 c = db.query("testtb",null, null, null, null, null, null);
+                str = "データベース一覧\n";
+                while(c.moveToNext()) {
+                    str += c.getString(c.getColumnIndex("_id")) + ":" +
+                            c.getString(c.getColumnIndex("lat")) + ":"+
+                            c.getString(c.getColumnIndex("lot")) + "\n";
+//            c.getString(c.getColumnIndex("lat")) + "\n";
+                }
+                Log.e(TAG,str);
+            }
+
+
         });
         //requestLocationUpdates();
     }
@@ -130,37 +163,24 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
     // Called when the location has changed.
     @Override
     public void onLocationChanged(Location location) {
-        Log.e(TAG, "onLocationChanged.");
+        //Log.e(TAG, "onLocationChanged.");
         //showLocation(location);
         String lat = valueOf(location.getLatitude());
         String lot = valueOf(location.getLongitude());
 
         //もしこの座標がその前の座標と一致していなければ
-            LocationData lastLocation = (LocationData) locationList.get(locationList.size() - 1);
-            if ((lastLocation.lat != lat) || (lastLocation.lot != lot)) {
-                LocationData locationData = new LocationData(lat, lot);
-                locationList.add(locationData);
-            }
+        LocationData lastLocation = (LocationData) locationList.get(locationList.size() - 1);
+        if ((lastLocation.lat != lat) || (lastLocation.lot != lot)) {
+            LocationData locationData = new LocationData(lat, lot);
+            locationList.add(locationData);
+        }
 
-        //データベースのデータを読み取って表示する。
-//        Cursor c = db.query("testtb", new String[] {"_id", "lat","lot"}, null, null, null, null, null);
-//        Cursor c = db.query("testtb", new String[] {"_id", "lat","lot"}, null, null, null, null, null);
-
-//        Cursor c = db.query("testtb",null, null, null, null, null, null);
-//        str = "データベース一覧\n";
-//        while(c.moveToNext()) {
-//            str += c.getString(c.getColumnIndex("_id")) + ":" +
-//                    c.getString(c.getColumnIndex("lat")) + ":"+
-//                    c.getString(c.getColumnIndex("lot")) + "\n";
-////            c.getString(c.getColumnIndex("lat")) + "\n";
-//        }
-//        Log.e(TAG,str);
     }
 
     // Called when the provider status changed.
     @Override
     public void onStatusChanged(String provider, int status, Bundle extras) {
-        Log.e(TAG, "onStatusChanged.");
+        //Log.e(TAG, "onStatusChanged.");
 
     }
 
@@ -238,19 +258,19 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
 
         //requestLocation data
         mLocationManager.requestLocationUpdates(
-                    //LocationManager.NETWORK_PROVIDER,
-                    LocationManager.GPS_PROVIDER,
-                    LOCATION_UPDATE_MIN_TIME,
-                    LOCATION_UPDATE_MIN_DISTANCE,
-                    this);
+                //LocationManager.NETWORK_PROVIDER,
+                LocationManager.GPS_PROVIDER,
+                LOCATION_UPDATE_MIN_TIME,
+                LOCATION_UPDATE_MIN_DISTANCE,
+                this);
 
         //get location data
-         Location location = mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+        Location location = mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
 
         //check location data
         Log.e(TAG, location.getLatitude() + ",########" + location.getLongitude());
         mMap.addMarker(new MarkerOptions().position(new LatLng(location.getLatitude(),location.getLongitude())).title("okano"));
-         CameraPosition sydney = new CameraPosition.Builder()
+        CameraPosition sydney = new CameraPosition.Builder()
                 .target(new LatLng(location.getLatitude(),location.getLongitude())).zoom(15.5f)
                 .bearing(0).tilt(25).build();
         mMap.animateCamera(CameraUpdateFactory.newCameraPosition(sydney));
