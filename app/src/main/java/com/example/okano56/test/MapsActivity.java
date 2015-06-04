@@ -27,6 +27,7 @@ import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.sql.Array;
@@ -50,8 +51,9 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
     private  MyDBHelper myhelper ;   //to create database
     private  static SQLiteDatabase db;    //database
     private String str;
-
+    private Marker mMarker;
     private ArrayList locationList;
+    private ArrayList markerList;
 
 
     //locationデータ保存用のデータクラス
@@ -71,18 +73,19 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         LocationData fisrt = new LocationData("0","0");
         locationList.add(fisrt);
 
+        markerList = new ArrayList<Marker>();
+
+
+
         deleteDatabase("testtb");
 
 
         Log.e(TAG, "onLocationChanged.");
         //setContentView(R.layout.acivity_map2);
         setContentView(R.layout.activity_maps);
-
         //create database helper ??
         myhelper = new MyDBHelper(this);
         db = myhelper.getWritableDatabase();
-        //db.delete("test",null,null);  //clear database tables
-
         mLocationManager = (LocationManager)this.getSystemService(Service.LOCATION_SERVICE);  //位置データを取る用
         setUpMapIfNeeded();
 
@@ -90,14 +93,12 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         saveButton.setOnClickListener(new OnClickListener() {
                                           @Override
                                           public void onClick(View v){
-                                              Log.e(TAG,"dadadafgagaga");
+                                              Toast.makeText(getApplicationContext(), "位置データを保存", Toast.LENGTH_LONG).show();
 
                                               LocationData lastLocation = (LocationData) locationList.get(locationList.size()-1);
                                               ContentValues values = new ContentValues();
                                               values.put("lat",lastLocation.lat);
-//                                                values.put("lat","22");
                                               values.put("lot",lastLocation.lot);
-//                                                values.put("lot","44");
                                               db.insert("testtb",null , values);
                                           }
                                       }
@@ -107,6 +108,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         outputButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
+                markerList = new ArrayList<Marker>();   //initialize markerList
                 Cursor c = db.query("testtb",null, null, null, null, null, null);
                 str = "データベース一覧\n";
                 while(c.moveToNext()) {
@@ -118,14 +120,14 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
                     double lat =Double.parseDouble(c.getString(c.getColumnIndex("lat")));
                     double lot =Double.parseDouble(c.getString(c.getColumnIndex("lot")));
                     LatLng location = new LatLng(lat, lot);
-// マーカーの設定
+                    // マーカーの設定
                     MarkerOptions options = new MarkerOptions();
                     options.position(location);
-                    options.title("データ穂OK");
+                    options.title("データOK");
                     options.snippet(location.toString());
-
-// マップにマーカーを追加
-                    mMap.addMarker(options);
+                    // マップにマーカーを追加
+                    mMarker = mMap.addMarker(options);
+                    markerList.add(mMarker);
                 }
                 Log.e(TAG,str);
             }
@@ -143,22 +145,17 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
                     id= c.getString(c.getColumnIndex("_id"));
                     db.delete("testtb", "_id="+id, null);
                 }
+                //delete markers
+                for(int i = 0; i < markerList.size();i++){
+                    Marker marker = (Marker)markerList.get(i);
+                    marker.remove();
+                }
 
                 locationList = new ArrayList<LocationData>();
                 LocationData fisrt = new LocationData("0","0");
                 locationList.add(fisrt);
                 str = "データベースを削除しました";
-                Log.e(TAG,str);
-
-                c = db.query("testtb",null, null, null, null, null, null);
-                str = "データベース一覧\n";
-                while(c.moveToNext()) {
-                    str += c.getString(c.getColumnIndex("_id")) + ":" +
-                            c.getString(c.getColumnIndex("lat")) + ":"+
-                            c.getString(c.getColumnIndex("lot")) + "\n";
-//            c.getString(c.getColumnIndex("lat")) + "\n";
-                }
-                Log.e(TAG,str);
+                Toast.makeText(getApplicationContext(), str, Toast.LENGTH_LONG).show();
             }
 
 
@@ -281,7 +278,6 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
 
         //check location data
         Log.e(TAG, location.getLatitude() + ",########" + location.getLongitude());
-        mMap.addMarker(new MarkerOptions().position(new LatLng(location.getLatitude(),location.getLongitude())).title("okano"));
         CameraPosition sydney = new CameraPosition.Builder()
                 .target(new LatLng(location.getLatitude(),location.getLongitude())).zoom(15.5f)
                 .bearing(0).tilt(25).build();
