@@ -24,14 +24,14 @@
             android:id="@+id/saveMapData" />
 
         <Button
-            android:layout_width="wrap_content"
+            android:layout_width="124dp"
             android:layout_height="81dp"
             android:text="データ表示"
             android:id="@+id/openMapData" />
 
         <Button
-            android:layout_width="151dp"
-            android:layout_height="65dp"
+            android:layout_width="159dp"
+            android:layout_height="84dp"
             android:text="データ削除"
             android:id="@+id/deleteButton" />
     </LinearLayout>

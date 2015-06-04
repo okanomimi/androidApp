@@ -113,7 +113,19 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
                     str += c.getString(c.getColumnIndex("_id")) + ":" +
                             c.getString(c.getColumnIndex("lat")) + ":"+
                             c.getString(c.getColumnIndex("lot")) + "\n";
-//            c.getString(c.getColumnIndex("lat")) + "\n";
+
+                    // マーカーを貼る緯度・経度
+                    double lat =Double.parseDouble(c.getString(c.getColumnIndex("lat")));
+                    double lot =Double.parseDouble(c.getString(c.getColumnIndex("lot")));
+                    LatLng location = new LatLng(lat, lot);
+// マーカーの設定
+                    MarkerOptions options = new MarkerOptions();
+                    options.position(location);
+                    options.title("データ穂OK");
+                    options.snippet(location.toString());
+
+// マップにマーカーを追加
+                    mMap.addMarker(options);
                 }
                 Log.e(TAG,str);
             }
@@ -138,7 +150,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
                 str = "データベースを削除しました";
                 Log.e(TAG,str);
 
-                 c = db.query("testtb",null, null, null, null, null, null);
+                c = db.query("testtb",null, null, null, null, null, null);
                 str = "データベース一覧\n";
                 while(c.moveToNext()) {
                     str += c.getString(c.getColumnIndex("_id")) + ":" +
