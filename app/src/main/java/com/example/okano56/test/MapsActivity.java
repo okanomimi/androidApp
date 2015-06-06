@@ -52,9 +52,8 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
     private  static SQLiteDatabase db;    //database
     private String str;
     private Marker mMarker;
-    private ArrayList locationList;
     private ArrayList markerList;
-
+    private Location lastLocation;
 
     //locationデータ保存用のデータクラス
     public class LocationData {
@@ -69,19 +68,8 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        locationList = new ArrayList<LocationData>();
-        LocationData fisrt = new LocationData("0","0");
-        locationList.add(fisrt);
 
         markerList = new ArrayList<Marker>();
-
-
-
-        deleteDatabase("testtb");
-
-
-        Log.e(TAG, "onLocationChanged.");
-        //setContentView(R.layout.acivity_map2);
         setContentView(R.layout.activity_maps);
         //create database helper ??
         myhelper = new MyDBHelper(this);
@@ -95,11 +83,10 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
                                           public void onClick(View v){
                                               Toast.makeText(getApplicationContext(), "位置データを保存", Toast.LENGTH_LONG).show();
 
-                                              LocationData lastLocation = (LocationData) locationList.get(locationList.size()-1);
                                               ContentValues values = new ContentValues();
-                                              values.put("lat",lastLocation.lat);
-                                              values.put("lot",lastLocation.lot);
-                                              db.insert("testtb",null , values);
+                                              values.put("lat",valueOf(lastLocation.getLatitude()));
+                                              values.put("lot",valueOf(lastLocation.getLongitude()));
+                                              db.insert("posDB",null , values);
                                           }
                                       }
         );
@@ -109,7 +96,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
             @Override
             public void onClick(View v) {
                 markerList = new ArrayList<Marker>();   //initialize markerList
-                Cursor c = db.query("testtb",null, null, null, null, null, null);
+                Cursor c = db.query("posDB",null, null, null, null, null, null);
                 str = "データベース一覧\n";
                 while(c.moveToNext()) {
                     str += c.getString(c.getColumnIndex("_id")) + ":" +
@@ -137,23 +124,19 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         deleteButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                //deleteDatabase("testtb");
+                //deleteDatabase("posDB");
                 //delete all data in database
-                Cursor c = db.query("testtb",null, null, null, null, null, null);
+                Cursor c = db.query("posDB",null, null, null, null, null, null);
                 String id;
                 while(c.moveToNext()) {
                     id= c.getString(c.getColumnIndex("_id"));
-                    db.delete("testtb", "_id="+id, null);
+                    db.delete("posDB", "_id="+id, null);
                 }
                 //delete markers
                 for(int i = 0; i < markerList.size();i++){
                     Marker marker = (Marker)markerList.get(i);
                     marker.remove();
                 }
-
-                locationList = new ArrayList<LocationData>();
-                LocationData fisrt = new LocationData("0","0");
-                locationList.add(fisrt);
                 str = "データベースを削除しました";
                 Toast.makeText(getApplicationContext(), str, Toast.LENGTH_LONG).show();
             }
@@ -170,27 +153,18 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
 
     //
     // Called when the location has changed.
+    // add location to location list
+    // location更新時にリストに保存しておく。
+    //
     @Override
     public void onLocationChanged(Location location) {
-        //Log.e(TAG, "onLocationChanged.");
-        //showLocation(location);
-        String lat = valueOf(location.getLatitude());
-        String lot = valueOf(location.getLongitude());
-
-        //もしこの座標がその前の座標と一致していなければ
-        LocationData lastLocation = (LocationData) locationList.get(locationList.size() - 1);
-        if ((lastLocation.lat != lat) || (lastLocation.lot != lot)) {
-            LocationData locationData = new LocationData(lat, lot);
-            locationList.add(locationData);
-        }
-
+         lastLocation = location;   //直近のlocationデータを保存
     }
 
     // Called when the provider status changed.
     @Override
     public void onStatusChanged(String provider, int status, Bundle extras) {
         //Log.e(TAG, "onStatusChanged.");
-
     }
 
     @Override

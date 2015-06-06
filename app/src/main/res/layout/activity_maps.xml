@@ -30,7 +30,7 @@
             android:id="@+id/openMapData" />
 
         <Button
-            android:layout_width="159dp"
+            android:layout_width="match_parent"
             android:layout_height="84dp"
             android:text="データ削除"
             android:id="@+id/deleteButton" />
