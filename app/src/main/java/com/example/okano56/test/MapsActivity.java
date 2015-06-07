@@ -77,13 +77,8 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         saveButton.setOnClickListener(new OnClickListener() {
                                           @Override
                                           public void onClick(View v){
-                                              Toast.makeText(getApplicationContext(), "位置データを保存", Toast.LENGTH_LONG).show();
 
                                               saveDialog();
-                                              ContentValues values = new ContentValues();
-                                              values.put("lat",valueOf(lastLocation.getLatitude()));
-                                              values.put("lot",valueOf(lastLocation.getLongitude()));
-                                              db.insert("posDB",null , values);
                                           }
                                       }
         );
@@ -103,12 +98,15 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
                     // マーカーを貼る緯度・経度
                     double lat =Double.parseDouble(c.getString(c.getColumnIndex("lat")));
                     double lot =Double.parseDouble(c.getString(c.getColumnIndex("lot")));
+                    String name = c.getString(c.getColumnIndex("posName"));
+                    String memo = c.getString(c.getColumnIndex("posMemo"));
+
                     LatLng location = new LatLng(lat, lot);
                     // マーカーの設定
                     MarkerOptions options = new MarkerOptions();
                     options.position(location);
-                    options.title("データOK");
-                    options.snippet(location.toString());
+                    options.title(name);
+                    options.snippet(memo);
                     // マップにマーカーを追加
                     mMarker = mMap.addMarker(options);
                     markerList.add(mMarker);
@@ -159,8 +157,18 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         builder.setPositiveButton("Ok",new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                EditText text = (EditText) layout.findViewById(R.id.edit_text);
-                String string = text.getText().toString();
+                EditText posName = (EditText) layout.findViewById(R.id.edit_text);
+                EditText posMemo = (EditText) layout.findViewById(R.id.edit_text2);
+                String name =posName.getText().toString();
+                String memo = posMemo.getText().toString();
+
+                ContentValues values = new ContentValues();
+        values.put("lat",valueOf(lastLocation.getLatitude()));
+        values.put("lot",valueOf(lastLocation.getLongitude()));
+        values.put("posName",valueOf(name));
+        values.put("posMemo",valueOf(memo));
+        db.insert("posDB",null , values);
+                Toast.makeText(getApplicationContext(), "位置データを保存", Toast.LENGTH_LONG).show();
             }
         });
         builder.setNegativeButton("Cancel",new DialogInterface.OnClickListener() {
@@ -170,6 +178,8 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
             }
         });
         builder.create().show();
+
+
     }
 
     @Override
@@ -184,7 +194,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
     //
     @Override
     public void onLocationChanged(Location location) {
-         lastLocation = location;   //直近のlocationデータを保存
+        lastLocation = location;   //直近のlocationデータを保存
     }
 
     // Called when the provider status changed.
