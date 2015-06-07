@@ -86,8 +86,13 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
 
         Button outputButton = (Button) findViewById(R.id.openMapData);      //マップデータを表示するボタンの実装
         outputButton.setOnClickListener(new OnClickListener() {
+
             @Override
             public void onClick(View v) {
+                for(int i = markerList.size() -1 ; i >= 0;i--){
+                    Marker marker = (Marker)markerList.get(i);
+                    marker.remove();
+                }
                 markerList = new ArrayList<Marker>();   //initialize markerList
                 Cursor c = db.query("posDB",null, null, null, null, null, null);
                 str = "データベース一覧\n";
