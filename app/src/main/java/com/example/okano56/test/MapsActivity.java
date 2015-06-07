@@ -1,5 +1,6 @@
 package com.example.okano56.test;
 
+import android.app.AlertDialog;
 import android.app.Service;
 import android.content.ContentValues;
 import android.content.Context;
@@ -15,10 +16,13 @@ import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.LayoutInflater;
+import android.view.ViewGroup;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -55,15 +59,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
     private ArrayList markerList;
     private Location lastLocation;
 
-    //locationデータ保存用のデータクラス
-    public class LocationData {
-        String lat;
-        String lot;
-        public LocationData(String lat,String lot) {
-            this.lat = lat;
-            this.lot = lot;
-        }
-    }
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -83,6 +79,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
                                           public void onClick(View v){
                                               Toast.makeText(getApplicationContext(), "位置データを保存", Toast.LENGTH_LONG).show();
 
+                                              saveDialog();
                                               ContentValues values = new ContentValues();
                                               values.put("lat",valueOf(lastLocation.getLatitude()));
                                               values.put("lot",valueOf(lastLocation.getLongitude()));
@@ -144,6 +141,35 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
 
         });
         //requestLocationUpdates();
+    }
+
+    //locationデータを保存するようのダイアログ
+    private void saveDialog(){
+        LayoutInflater inflater = (LayoutInflater)this
+                .getSystemService(LAYOUT_INFLATER_SERVICE);
+        final View layout = inflater.inflate(
+                R.layout.save_pos_data,
+                (ViewGroup) findViewById(R.id.layout_root)
+        );
+
+        //アラーとダイアログの生成
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("test");
+        builder.setView(layout);
+        builder.setPositiveButton("Ok",new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                EditText text = (EditText) layout.findViewById(R.id.edit_text);
+                String string = text.getText().toString();
+            }
+        });
+        builder.setNegativeButton("Cancel",new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+
+            }
+        });
+        builder.create().show();
     }
 
     @Override
