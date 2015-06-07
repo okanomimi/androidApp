@@ -5,6 +5,7 @@ import android.app.Service;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.location.Criteria;
@@ -64,7 +65,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
+        deleteDatabase("posDB");
         markerList = new ArrayList<Marker>();
         setContentView(R.layout.activity_maps);
         //create database helper ??
@@ -128,7 +129,8 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
                     db.delete("posDB", "_id="+id, null);
                 }
                 //delete markers
-                for(int i = 0; i < markerList.size();i++){
+                Log.e(TAG, Integer.toString(markerList.size()));
+                for(int i = markerList.size() -1 ; i >= 0;i--){
                     Marker marker = (Marker)markerList.get(i);
                     marker.remove();
                 }
@@ -163,11 +165,11 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
                 String memo = posMemo.getText().toString();
 
                 ContentValues values = new ContentValues();
-        values.put("lat",valueOf(lastLocation.getLatitude()));
-        values.put("lot",valueOf(lastLocation.getLongitude()));
-        values.put("posName",valueOf(name));
-        values.put("posMemo",valueOf(memo));
-        db.insert("posDB",null , values);
+                values.put("lat",valueOf(lastLocation.getLatitude()));
+                values.put("lot",valueOf(lastLocation.getLongitude()));
+                values.put("posName",valueOf(name));
+                values.put("posMemo", valueOf(memo));
+                db.insert("posDB",null , values);
                 Toast.makeText(getApplicationContext(), "位置データを保存", Toast.LENGTH_LONG).show();
             }
         });
