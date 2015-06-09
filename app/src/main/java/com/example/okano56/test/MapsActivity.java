@@ -6,8 +6,10 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.graphics.BitmapFactory;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
@@ -18,6 +20,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.view.View;
@@ -30,11 +33,14 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.LocationSource;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptor;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import java.io.InputStream;
 import java.sql.Array;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -107,11 +113,14 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
                     String name = c.getString(c.getColumnIndex("posName"));
                     String memo = c.getString(c.getColumnIndex("posMemo"));
 
+//                    BitmapDescriptor icon = BitmapDescriptorFactory.fromResource(R.drawable.ic_launcher_web);
+                    BitmapDescriptor icon = BitmapDescriptorFactory.fromResource(R.drawable.icon_109850);
                     LatLng location = new LatLng(lat, lot);
                     // マーカーの設定
                     MarkerOptions options = new MarkerOptions();
                     options.position(location);
                     options.title(name);
+                    options.icon(icon);
                     options.snippet(memo);
                     // マップにマーカーを追加
                     mMarker = mMap.addMarker(options);
