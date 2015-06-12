@@ -3,35 +3,27 @@ package com.example.okano56.test;
 import android.app.AlertDialog;
 import android.app.Service;
 import android.content.ContentValues;
-import android.content.Context;
 import android.content.DialogInterface;
-import android.content.Intent;
-import android.content.res.Resources;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.graphics.BitmapFactory;
-import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
-import android.location.LocationProvider;
-import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
+import android.support.v4.app.FragmentActivity;
 import android.util.Log;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.ImageView;
-import android.widget.TextView;
-import android.widget.Toast;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.view.LayoutInflater;
 import android.view.ViewGroup;
-import com.google.android.gms.maps.CameraUpdate;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
+import android.widget.Toast;
+
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.LocationSource;
-import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
@@ -40,12 +32,7 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
-import java.io.InputStream;
-import java.sql.Array;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 
 import static java.lang.String.valueOf;
 
@@ -84,7 +71,6 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         saveButton.setOnClickListener(new OnClickListener() {
                                           @Override
                                           public void onClick(View v){
-
                                               saveDialog();
                                           }
                                       }
@@ -123,6 +109,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
                     options.icon(icon);
                     options.snippet(memo);
                     // マップにマーカーを追加
+                    //mMap.setInfoWindowAdapter(new CustomInfoAdaper());
                     mMarker = mMap.addMarker(options);
                     markerList.add(mMarker);
                 }
@@ -197,6 +184,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
 
 
     }
+
 
     @Override
     protected void onResume() {
@@ -333,6 +321,33 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         @Override
         public void deactivate() {
         }
+    }
+
+    private class CustomInfoAdaper implements GoogleMap.InfoWindowAdapter{
+        private final View mWindow;
+
+
+        public CustomInfoAdaper(){
+            mWindow = getLayoutInflater().inflate(R.layout.custom_info_window,null);
+        }
+        @Override
+        public View getInfoWindow(Marker marker){
+            render(marker,mWindow);
+            return mWindow;
+        }
+
+        @Override
+        public View getInfoContents(Marker marker){
+            return null;
+        }
+
+        private void render(Marker marker,View view){
+           if (marker.equals(mMarker)) {
+
+           }
+        }
+
+
     }
 }
 
