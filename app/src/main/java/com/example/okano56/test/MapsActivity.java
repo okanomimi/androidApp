@@ -60,7 +60,6 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         deleteDatabase("posDB");
         markerList = new ArrayList<Marker>();
         setContentView(R.layout.activity_maps);
-        //create database helper ??
         myhelper = new MyDBHelper(this);
         db = myhelper.getWritableDatabase();
         mLocationManager = (LocationManager)this.getSystemService(Service.LOCATION_SERVICE);  //位置データを取る用
@@ -77,7 +76,6 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
 
         Button outputButton = (Button) findViewById(R.id.openMapData);      //マップデータを表示するボタンの実装
         outputButton.setOnClickListener(new OnClickListener() {
-
             @Override
             public void onClick(View v) {
                 Cursor c = db.query("posDB",null, null, null, null, null, null);
@@ -86,13 +84,8 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
                     str += c.getString(c.getColumnIndex("_id")) + ":" +
                             c.getString(c.getColumnIndex("lat")) + ":"+
                             c.getString(c.getColumnIndex("lot")) + "\n";
-
                 }
-
-                for(int i = markerList.size() -1 ; i >= 0;i--){
-                    Marker marker = (Marker)markerList.get(i);
-                    marker.setVisible(true);    //各マーカーの表示
-                }
+                setMarkerListVisible(true);
                 Log.e(TAG,str);
             }
         });
@@ -101,20 +94,8 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         deleteButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                //deleteDatabase("posDB");
-                //delete all data in database
-                Cursor c = db.query("posDB",null, null, null, null, null, null);
-                String id;
-                while(c.moveToNext()) {
-                    id= c.getString(c.getColumnIndex("_id"));
-                    db.delete("posDB", "_id=\""+id+"\"", null);
-                }
-                //delete markers
-                Log.e(TAG, Integer.toString(markerList.size()));
-                for(int i = markerList.size() -1 ; i >= 0;i--){
-                    Marker marker = (Marker)markerList.get(i);
-                    marker.remove();
-                }
+                deleteAllPosDatabese();   //delete posDB's data
+                deleteMarkerList() ;   //delete markers
                 str = "データベースを削除しました";
                 Toast.makeText(getApplicationContext(), str, Toast.LENGTH_LONG).show();
             }
@@ -169,6 +150,39 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
 
     }
 
+
+    /**
+     *
+     * @param isVisible
+     */
+    private void setMarkerListVisible(Boolean isVisible){
+        for(int i = markerList.size() -1 ; i >= 0;i--){
+            Marker marker = (Marker)markerList.get(i);
+            marker.setVisible(isVisible);    //各マーカーの表示
+        }
+    }
+
+    /**
+     * delete marker list content
+     */
+    private void deleteMarkerList(){
+        for(int i = markerList.size() -1 ; i >= 0;i--){
+                    Marker marker = (Marker)markerList.get(i);
+                    marker.remove();
+                }
+    }
+
+    /**
+     * delete posDB's datas
+     */
+    private void deleteAllPosDatabese(){
+         Cursor c = db.query("posDB",null, null, null, null, null, null);
+                String id;
+                while(c.moveToNext()) {
+                    id= c.getString(c.getColumnIndex("_id"));
+                    db.delete("posDB", "_id=\""+id+"\"", null);
+                }
+    }
     /**
      * create marker options
      * @param location
