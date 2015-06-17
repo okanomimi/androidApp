@@ -28,7 +28,16 @@
         style="?android:attr/buttonStyleSmall"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="New Button"
-        android:id="@+id/fix_button" />
+        android:text="削除"
+        android:id="@+id/remove_button" />
+
+    <Button
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="編集"
+        android:id="@+id/edit_button" />
+
+
 
 </LinearLayout>

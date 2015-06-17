@@ -18,6 +18,7 @@ import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.PopupWindow;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -118,12 +119,12 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("test");
         builder.setView(layout);
-        builder.setPositiveButton("Ok",new DialogInterface.OnClickListener() {
+        builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 EditText posName = (EditText) layout.findViewById(R.id.edit_text);
                 EditText posMemo = (EditText) layout.findViewById(R.id.edit_text2);
-                String name =posName.getText().toString();
+                String name = posName.getText().toString();
                 String memo = posMemo.getText().toString();
 
                 BitmapDescriptor icon = BitmapDescriptorFactory.fromResource(R.drawable.icon_109850);
@@ -140,7 +141,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
                 Toast.makeText(getApplicationContext(), "位置データを保存", Toast.LENGTH_LONG).show();
             }
         });
-        builder.setNegativeButton("Cancel",new DialogInterface.OnClickListener() {
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
 
@@ -167,21 +168,21 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
      */
     private void deleteMarkerList(){
         for(int i = markerList.size() -1 ; i >= 0;i--){
-                    Marker marker = (Marker)markerList.get(i);
-                    marker.remove();
-                }
+            Marker marker = (Marker)markerList.get(i);
+            marker.remove();
+        }
     }
 
     /**
      * delete posDB's datas
      */
     private void deleteAllPosDatabese(){
-         Cursor c = db.query("posDB",null, null, null, null, null, null);
-                String id;
-                while(c.moveToNext()) {
-                    id= c.getString(c.getColumnIndex("_id"));
-                    db.delete("posDB", "_id=\""+id+"\"", null);
-                }
+        Cursor c = db.query("posDB",null, null, null, null, null, null);
+        String id;
+        while(c.moveToNext()) {
+            id= c.getString(c.getColumnIndex("_id"));
+            db.delete("posDB", "_id=\""+id+"\"", null);
+        }
     }
     /**
      * create marker options
@@ -192,12 +193,12 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
      * @return markerOptions
      */
     private MarkerOptions createMarkerOptions(LatLng location, String name, String memo, BitmapDescriptor icon){
-                MarkerOptions options = new MarkerOptions();
-                options.position(location);
-                options.title(name);
-                options.icon(icon);
-                options.snippet(memo);
-                options.visible(false) ;    //この段階では非表示
+        MarkerOptions options = new MarkerOptions();
+        options.position(location);
+        options.title(name);
+        options.icon(icon);
+        options.snippet(memo);
+        options.visible(false) ;    //この段階では非表示
 
         return options ;
     }
@@ -209,12 +210,12 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
      */
     private void insertPosDataToDB(String name, String memo){
         ContentValues values = new ContentValues();
-                values.put("_id", String.valueOf(mMarker.getId())) ;
-                values.put("lat",valueOf(lastLocation.getLatitude()));
-                values.put("lot",valueOf(lastLocation.getLongitude()));
-                values.put("posName", valueOf(name));
-                values.put("posMemo", valueOf(memo));
-                db.insert("posDB", null, values);
+        values.put("_id", String.valueOf(mMarker.getId())) ;
+        values.put("lat",valueOf(lastLocation.getLatitude()));
+        values.put("lot",valueOf(lastLocation.getLongitude()));
+        values.put("posName", valueOf(name));
+        values.put("posMemo", valueOf(memo));
+        db.insert("posDB", null, values);
     }
 
     @Override
@@ -318,6 +319,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         mMap.setMyLocationEnabled(true);  //display data on the map
 
         mMap.setInfoWindowAdapter(new MyInfoAdaper());  //自分用のアダプタをセットする
+//        mMap.setInfoWindowAdapter(new PopupWindow());  //自分用のアダプタをセットする
     }
 
     /**
@@ -327,7 +329,8 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
      */
     private class MyInfoAdaper implements GoogleMap.InfoWindowAdapter{
         private final View mWindow;
-
+        private Button removeButton ;
+        private Button editButton;
         //コンストラクタ
         public MyInfoAdaper(){
             mWindow = getLayoutInflater().inflate(R.layout.custom_info_window,null);
@@ -350,11 +353,33 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
             TextView title = (TextView)view.findViewById(R.id.title_text) ;
             TextView snippet = (TextView)view.findViewById(R.id.context_text) ;
 
-
             markersIdText.setText(marker.getId());
             title.setText(marker.getTitle()) ;
             snippet.setText(marker.getSnippet()) ;
+
+            removeButton = (Button)view.findViewById(R.id.remove_button) ;
+//            removeButton.setOnClickListener(this);
+            removeButton.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    if(view == removeButton) {
+                        Log.e(TAG, "removeButton")  ;
+                    }else if (view == editButton){
+
+                    }
+                }
+            });
         }
+
+//        @Override
+//        public void onClick(View view) {
+//           if(view == removeButton) {
+//              Log.e(TAG, "removeButton")  ;
+//           }else if (view == editButton){
+//
+//           }
+//
+//        }
     }
 
 }
