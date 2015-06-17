@@ -23,7 +23,6 @@ import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.LocationSource;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
@@ -81,11 +80,6 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
 
             @Override
             public void onClick(View v) {
-//                for(int i = markerList.size() -1 ; i >= 0;i--){
-//                    Marker marker = (Marker)markerList.get(i);
-//                    marker.remove();
-//                }
-//                markerList = new ArrayList<Marker>();   //initialize markerList
                 Cursor c = db.query("posDB",null, null, null, null, null, null);
                 str = "データベース一覧\n";
                 while(c.moveToNext()) {
@@ -93,29 +87,6 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
                             c.getString(c.getColumnIndex("lat")) + ":"+
                             c.getString(c.getColumnIndex("lot")) + "\n";
 
-                    // マーカーを貼る緯度・経度
-//                    double lat =Double.parseDouble(c.getString(c.getColumnIndex("lat")));
-//                    double lot =Double.parseDouble(c.getString(c.getColumnIndex("lot")));
-//                    String name = c.getString(c.getColumnIndex("posName"));
-//                    String memo = c.getString(c.getColumnIndex("posMemo"));
-//
-////                    BitmapDescriptor icon = BitmapDescriptorFactory.fromResource(R.drawable.ic_launcher_web);
-//                    BitmapDescriptor icon = BitmapDescriptorFactory.fromResource(R.drawable.icon_109850);
-//                    LatLng location = new LatLng(lat, lot);
-//                    // マーカーの設定
-//                    MarkerOptions options = new MarkerOptions();
-//                    options.position(location);
-//                    options.title(name);
-//                    options.icon(icon);
-//                    options.snippet(memo);
-
-                    // マップにマーカーを追加
-//                    mMap.setInfoWindowAdapter(new CustomInfoAdaper());
-//                    mMap.setInfoWindowAdapter(new MyInfoAdaper(c.getString(c.getColumnIndex("_id"))));
-
-//                    mMap.setInfoWindowAdapter(new MyInfoAdaper());
-//                    mMarker = mMap.addMarker(options);
-//                    markerList.add(mMarker);
                 }
 
                 for(int i = markerList.size() -1 ; i >= 0;i--){
@@ -136,8 +107,6 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
                 String id;
                 while(c.moveToNext()) {
                     id= c.getString(c.getColumnIndex("_id"));
-                   // id= c.getColumnIndex("_id");
-//                    db.delete("posDB", "_id="+id, null);
                     db.delete("posDB", "_id=\""+id+"\"", null);
                 }
                 //delete markers
@@ -176,32 +145,17 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
                 String name =posName.getText().toString();
                 String memo = posMemo.getText().toString();
 
-
-
                 BitmapDescriptor icon = BitmapDescriptorFactory.fromResource(R.drawable.icon_109850);
-                    LatLng location = new LatLng(lastLocation.getLatitude(), lastLocation.getLongitude());
-                    // マーカーの設定
-                    MarkerOptions options = new MarkerOptions();
-                    options.position(location);
-                    options.title(name);
-                    options.icon(icon);
-                    options.snippet(memo);
-                    options.visible(false) ;    //この段階では非表示
+                LatLng location = new LatLng(lastLocation.getLatitude(), lastLocation.getLongitude());
 
-                    // マップにマーカーを追加
-//                    mMap.setInfoWindowAdapter(new CustomInfoAdaper());
-//                    mMap.setInfoWindowAdapter(new MyInfoAdaper(c.getString(c.getColumnIndex("_id"))));
-                    mMap.setInfoWindowAdapter(new MyInfoAdaper());
-                    mMarker = mMap.addMarker(options);
-                    markerList.add(mMarker);
+                // マーカーの設定
+                MarkerOptions options = createMarkerOptions(location, name, memo, icon);
 
-                ContentValues values = new ContentValues();
-                values.put("_id", String.valueOf(mMarker.getId())) ;
-                values.put("lat",valueOf(lastLocation.getLatitude()));
-                values.put("lot",valueOf(lastLocation.getLongitude()));
-                values.put("posName", valueOf(name));
-                values.put("posMemo", valueOf(memo));
-                db.insert("posDB", null, values);
+                // マップにマーカーを追加
+                mMarker = mMap.addMarker(options);
+                markerList.add(mMarker);
+
+                insertPosDataToDB(name, memo);
                 Toast.makeText(getApplicationContext(), "位置データを保存", Toast.LENGTH_LONG).show();
             }
         });
@@ -213,20 +167,48 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         });
         builder.create().show();
 
-
     }
 
+    /**
+     * create marker options
+     * @param location
+     * @param name
+     * @param memo
+     * @param icon
+     * @return markerOptions
+     */
+    private MarkerOptions createMarkerOptions(LatLng location, String name, String memo, BitmapDescriptor icon){
+                MarkerOptions options = new MarkerOptions();
+                options.position(location);
+                options.title(name);
+                options.icon(icon);
+                options.snippet(memo);
+                options.visible(false) ;    //この段階では非表示
+
+        return options ;
+    }
+
+    /**
+     * posデータをDBに格納する
+     * @param name
+     * @param memo
+     */
+    private void insertPosDataToDB(String name, String memo){
+        ContentValues values = new ContentValues();
+                values.put("_id", String.valueOf(mMarker.getId())) ;
+                values.put("lat",valueOf(lastLocation.getLatitude()));
+                values.put("lot",valueOf(lastLocation.getLongitude()));
+                values.put("posName", valueOf(name));
+                values.put("posMemo", valueOf(memo));
+                db.insert("posDB", null, values);
+    }
 
     @Override
     protected void onResume() {
         super.onResume();
     }
 
-    //
     // Called when the location has changed.
-    // add location to location list
-    // location更新時にリストに保存しておく。
-    //
     @Override
     public void onLocationChanged(Location location) {
         lastLocation = location;   //直近のlocationデータを保存
@@ -302,13 +284,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
      * This should only be called once and when we are sure that {@link #mMap} is not null.
      */
     private void setUpMap() {
-        //mMap.addMarker(new MarkerOptions().position(new LatLng(43, 31)).title("Marker"));
-        //mMap.addMarker(new MarkerOptions().position(new LatLng(35.469716,139.629183)).title("Marker"));
-
         mMap.setTrafficEnabled(true); //display traffic data
-
-//        MyLocationSource source = new MyLocationSource();
-        //mMap.setLocationSource(source);
 
         //requestLocation data
         mLocationManager.requestLocationUpdates(
@@ -321,67 +297,25 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         //get location data
         Location location = mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
 
-        //check location data
-        Log.e(TAG, location.getLatitude() + ",########" + location.getLongitude());
         CameraPosition sydney = new CameraPosition.Builder()
                 .target(new LatLng(location.getLatitude(),location.getLongitude())).zoom(15.5f)
                 .bearing(0).tilt(25).build();
         mMap.animateCamera(CameraUpdateFactory.newCameraPosition(sydney));
         mMap.setMyLocationEnabled(true);  //display data on the map
 
-
+        mMap.setInfoWindowAdapter(new MyInfoAdaper());  //自分用のアダプタをセットする
     }
 
-    //I dont understand this class.maybe it's class postion data ??
-    public class MyLocationSource implements LocationSource {
-        @Override
-        public void activate(LocationSource.OnLocationChangedListener listener) {
-
-            // 好きな緯度・経度を設定した Location を作成
-
-            Location location = new Location("MyLocation");
-            //location.setLatitude(35.469716);
-            location.setLatitude(location.getLatitude());
-            //location.setLongitude(139.629183);
-            location.setLongitude(location.getLongitude());
-            System.out.println("location data "+location.getLongitude());
-            location.setAccuracy(100); // 精度
-            // Location に設定
-            listener.onLocationChanged(location);
-        }
-        @Override
-        public void deactivate() {
-        }
-    }
-
-    private class MyInfoAdaper extends CustomInfoAdaper{
-
-        public MyInfoAdaper(){
-            super();
-        }
-
-        @Override
-        public void render(Marker marker,View view){
-           if (marker.equals(mMarker)) {
-
-           }
-            TextView markersIdText = (TextView)view.findViewById(R.id.markersId) ;
-            TextView title = (TextView)view.findViewById(R.id.title_text) ;
-            TextView snippet = (TextView)view.findViewById(R.id.context_text) ;
-
-//            markersIdText.setText(markersId);
-
-            markersIdText.setText(marker.getId());
-            title.setText(marker.getTitle()) ;
-            snippet.setText(marker.getSnippet()) ;
-        }
-    }
-
-    private class CustomInfoAdaper implements GoogleMap.InfoWindowAdapter{
+    /**
+     *
+     *  Markerの吹き出しを自分用に変更したやつ。
+     *
+     */
+    private class MyInfoAdaper implements GoogleMap.InfoWindowAdapter{
         private final View mWindow;
 
-
-        public CustomInfoAdaper(){
+        //コンストラクタ
+        public MyInfoAdaper(){
             mWindow = getLayoutInflater().inflate(R.layout.custom_info_window,null);
         }
         @Override
@@ -396,18 +330,22 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         }
 
         public void render(Marker marker,View view){
-           if (marker.equals(mMarker)) {
-
-           }
-
+            if (marker.equals(mMarker)) {
+            }
+            TextView markersIdText = (TextView)view.findViewById(R.id.markersId) ;
             TextView title = (TextView)view.findViewById(R.id.title_text) ;
             TextView snippet = (TextView)view.findViewById(R.id.context_text) ;
+
+
+            markersIdText.setText(marker.getId());
             title.setText(marker.getTitle()) ;
             snippet.setText(marker.getSnippet()) ;
         }
     }
 
-
 }
+
+
+
 
 
