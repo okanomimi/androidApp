@@ -53,6 +53,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
     private ArrayList markerList;
     private Location lastLocation;
 
+    private PopupWindow markerPopupWindow ;
 
 
     @Override
@@ -318,7 +319,18 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         mMap.animateCamera(CameraUpdateFactory.newCameraPosition(sydney));
         mMap.setMyLocationEnabled(true);  //display data on the map
 
-        mMap.setInfoWindowAdapter(new MyInfoAdaper());  //自分用のアダプタをセットする
+       // mMap.setInfoWindowAdapter(new MyInfoAdaper());  //自分用のアダプタをセットする
+       mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
+           @Override
+           public boolean onMarkerClick(Marker marker) {
+               AlertDialog.Builder alertDlg = new AlertDialog.Builder(MapsActivity.this) ;
+               alertDlg.create().show();
+//               MarkerActivity test = new MarkerActivity();
+               String name = marker.getTitle();
+               Toast.makeText(getApplicationContext(), name, Toast.LENGTH_LONG).show();
+               return false ;
+           }
+       });
 //        mMap.setInfoWindowAdapter(new PopupWindow());  //自分用のアダプタをセットする
     }
 
