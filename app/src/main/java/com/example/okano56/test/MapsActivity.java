@@ -1,6 +1,8 @@
 package com.example.okano56.test;
 
 import android.app.AlertDialog;
+import android.app.Dialog;
+import android.app.DialogFragment;
 import android.app.Service;
 import android.content.ContentValues;
 import android.content.DialogInterface;
@@ -323,8 +325,10 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
        mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
            @Override
            public boolean onMarkerClick(Marker marker) {
-               AlertDialog.Builder alertDlg = new AlertDialog.Builder(MapsActivity.this) ;
-               alertDlg.create().show();
+//               AlertDialog.Builder alertDlg = new AlertDialog.Builder(MapsActivity.this) ;
+                DialogFragment alertDlg = new MyDialogFragment() ;
+               alertDlg.show(getFragmentManager(), "test") ;
+
 //               MarkerActivity test = new MarkerActivity();
                String name = marker.getTitle();
                Toast.makeText(getApplicationContext(), name, Toast.LENGTH_LONG).show();
@@ -334,6 +338,15 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
 //        mMap.setInfoWindowAdapter(new PopupWindow());  //自分用のアダプタをセットする
     }
 
+    public static class MyDialogFragment extends DialogFragment{
+        @Override
+        public Dialog onCreateDialog(Bundle savedInstanceState){
+            AlertDialog.Builder builder = new AlertDialog.Builder(getActivity()) ;
+            builder.setMessage("test") ;
+
+            return builder.create() ;
+        }
+    }
     /**
      *
      *  Markerの吹き出しを自分用に変更したやつ。
