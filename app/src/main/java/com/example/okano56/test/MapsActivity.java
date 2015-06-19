@@ -326,7 +326,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
            @Override
            public boolean onMarkerClick(Marker marker) {
 //               AlertDialog.Builder alertDlg = new AlertDialog.Builder(MapsActivity.this) ;
-                DialogFragment alertDlg = new MyDialogFragment() ;
+                DialogFragment alertDlg = MyDialogFragment.newInstance(marker) ;
                alertDlg.show(getFragmentManager(), "test") ;
 
 //               MarkerActivity test = new MarkerActivity();
@@ -339,10 +339,28 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
     }
 
     public static class MyDialogFragment extends DialogFragment{
+
+        public static MyDialogFragment newInstance(Marker marker){
+            MyDialogFragment myDialogFragment = new MyDialogFragment() ;
+            Bundle bunlde = new Bundle() ;
+            bunlde.putString("marker", marker.getTitle()) ;
+            myDialogFragment.setArguments(bunlde);
+            return myDialogFragment ;
+        }
+
         @Override
         public Dialog onCreateDialog(Bundle savedInstanceState){
             AlertDialog.Builder builder = new AlertDialog.Builder(getActivity()) ;
-            builder.setMessage("test") ;
+            builder.setMessage(getArguments().getString("marker"))
+                    .setPositiveButton("編集", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dailog, int id) {
+
+                        }
+                    }).setPositiveButton("削除", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dailog, int id) {
+
+                }
+            });
 
             return builder.create() ;
         }
