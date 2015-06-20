@@ -52,7 +52,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
     private  static SQLiteDatabase db;    //database
     private String str;
     private Marker mMarker;
-    private ArrayList markerList;
+    public static ArrayList markerList;
     private Location lastLocation;
 
     private PopupWindow markerPopupWindow ;
@@ -344,27 +344,51 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
             MyDialogFragment myDialogFragment = new MyDialogFragment() ;
             Bundle bunlde = new Bundle() ;
             bunlde.putString("marker", marker.getTitle()) ;
+            bunlde.putString("id", marker.getId()) ;
             myDialogFragment.setArguments(bunlde);
             return myDialogFragment ;
         }
 
         @Override
         public Dialog onCreateDialog(Bundle savedInstanceState){
+            CharSequence[] items = {"edit", "delete"} ;
             AlertDialog.Builder builder = new AlertDialog.Builder(getActivity()) ;
-            builder.setMessage(getArguments().getString("marker"))
-                    .setPositiveButton("編集", new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dailog, int id) {
+            builder.setItems(items, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialogInterface, int i) {
+                    switch (i){
+                        case 0:
+                            Toast.makeText(getActivity(), "edit", Toast.LENGTH_LONG).show() ;
+                            break ;
+                        case 1:
+                            Toast.makeText(getActivity(), "delete", Toast.LENGTH_LONG).show() ;
+                            delete_data() ;
+                            break ;
+                        default:
+                            break ;
 
-                        }
-                    }).setPositiveButton("削除", new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dailog, int id) {
-
+                    }
                 }
-            });
-
+            }) ;
             return builder.create() ;
         }
+
+        /**
+         *
+         */
+        private void delete_data(){
+            String dataId = getArguments().getString("id") ;
+            db.delete("posDB", "_id=\""+dataId+"\"", null);
+            Marker marker ;
+            for(int i = markerList.size()-1 ;i >= 0 ;i--){
+               marker =  (Marker)markerList.get(i) ;
+                if (marker.getId().equals(dataId)){
+                   marker.remove();
+                }
+            }
+        }
     }
+
     /**
      *
      *  Markerの吹き出しを自分用に変更したやつ。
