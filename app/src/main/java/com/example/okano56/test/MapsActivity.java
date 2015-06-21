@@ -34,7 +34,10 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 
 import static java.lang.String.valueOf;
 
@@ -82,6 +85,9 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         outputButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
+
+                DialogFragment alertDialog = new ListEachDateDialog() ;
+                alertDialog.show(getFragmentManager(), "ddd") ;
                 Cursor c = db.query("posDB",null, null, null, null, null, null);
                 str = "データベース一覧\n";
                 while(c.moveToNext()) {
@@ -89,7 +95,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
                             c.getString(c.getColumnIndex("lat")) + ":"+
                             c.getString(c.getColumnIndex("lot")) + "\n";
                 }
-                setMarkerListVisible(true);
+                //setMarkerListVisible(true);
                 Log.e(TAG,str);
             }
         });
@@ -138,7 +144,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
 
                 // マップにマーカーを追加
                 mMarker = mMap.addMarker(options);
-                markerList.add(mMarker);
+//                markerList.add(mMarker);
 
                 insertPosDataToDB(name, memo);
                 Toast.makeText(getApplicationContext(), "位置データを保存", Toast.LENGTH_LONG).show();
@@ -153,7 +159,6 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         builder.create().show();
 
     }
-
 
     /**
      *
@@ -187,6 +192,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
             db.delete("posDB", "_id=\""+id+"\"", null);
         }
     }
+
     /**
      * create marker options
      * @param location
@@ -195,11 +201,13 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
      * @param icon
      * @return markerOptions
      */
-    private MarkerOptions createMarkerOptions(LatLng location, String name, String memo, BitmapDescriptor icon){
+    private static MarkerOptions createMarkerOptions(LatLng location, String name, String memo, BitmapDescriptor icon){
         MarkerOptions options = new MarkerOptions();
         options.position(location);
         options.title(name);
-        options.icon(icon);
+        if (icon == null) {
+            options.icon(icon);
+        }
         options.snippet(memo);
         options.visible(false) ;    //この段階では非表示
 
@@ -212,12 +220,15 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
      * @param memo
      */
     private void insertPosDataToDB(String name, String memo){
+        Date date = new Date() ;
+        DateFormat df = new SimpleDateFormat("yyyy/MM/dd") ;
         ContentValues values = new ContentValues();
         values.put("_id", String.valueOf(mMarker.getId())) ;
         values.put("lat",valueOf(lastLocation.getLatitude()));
         values.put("lot",valueOf(lastLocation.getLongitude()));
         values.put("posName", valueOf(name));
         values.put("posMemo", valueOf(memo));
+        values.put("date", valueOf(df.format(date)));
         db.insert("posDB", null, values);
     }
 
@@ -338,6 +349,51 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
 //        mMap.setInfoWindowAdapter(new PopupWindow());  //自分用のアダプタをセットする
     }
 
+    public class ListEachDateDialog extends DialogFragment{
+         @Override
+        public Dialog onCreateDialog(Bundle savedInstanceState){
+             Cursor c = db.query("posDB",null, null, null, null, null, null);
+             ArrayList<CharSequence> dateList = new ArrayList<CharSequence>() ;
+
+             while(c.moveToNext()) {
+                if (!dateList.contains(c.getString(c.getColumnIndex("date")))) {
+                    dateList.add(c.getString(c.getColumnIndex("date"))) ;
+                 }
+
+                }
+            final CharSequence[] items = new CharSequence[dateList.size()] ;
+             for(int i =0  ;i < dateList.size() ;i++ ){
+                items[i] = dateList.get(i) ;
+             }
+
+            AlertDialog.Builder builder = new AlertDialog.Builder(getActivity()) ;
+            builder.setItems(items, new DialogInterface.OnClickListener() {
+                Cursor c = db.query("posDB",null, null, null, null, null, null);
+                @Override
+                public void onClick(DialogInterface dialogInterface, int i) {
+                   markerList = new ArrayList<Marker>()  ;
+                     //items[i]の日付を持つデータをデータベースから取り出す
+              while(c.moveToNext()) {
+                if (c.getString(c.getColumnIndex("date")).equals(items[i])) {
+                    String id =  c.getString(c.getColumnIndex("_id")) ;
+                    String lat =  c.getString(c.getColumnIndex("lat")) ;
+                    String lot =  c.getString(c.getColumnIndex("lot")) ;
+                    String posName =  c.getString(c.getColumnIndex("posName")) ;
+                    String posMemo =  c.getString(c.getColumnIndex("posMemo")) ;
+                    LatLng location = new LatLng(Float.valueOf(lat).floatValue(),Float.valueOf(lot).floatValue());
+                    MarkerOptions options = createMarkerOptions(location, posName, posMemo, null);
+                    Marker mMarker= mMap.addMarker(options) ;
+                    markerList.add(mMarker) ;
+                 }
+
+                }
+                    setMarkerListVisible(true);
+                }
+            }) ;
+            return builder.create() ;
+        }
+    }
+
     public static class MyDialogFragment extends DialogFragment{
 
         public static MyDialogFragment newInstance(Marker marker){
@@ -374,7 +430,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         }
 
         /**
-         *
+         *マーカーデータを消すことができるメソッド
          */
         private void delete_data(){
             String dataId = getArguments().getString("id") ;
@@ -398,6 +454,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         private final View mWindow;
         private Button removeButton ;
         private Button editButton;
+
         //コンストラクタ
         public MyInfoAdaper(){
             mWindow = getLayoutInflater().inflate(R.layout.custom_info_window,null);

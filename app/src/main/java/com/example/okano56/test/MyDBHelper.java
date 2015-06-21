@@ -17,7 +17,7 @@ public class MyDBHelper extends SQLiteOpenHelper {
     @Override
     public void onCreate(SQLiteDatabase db) {
 //        db.execSQL("CREATE TABLE posDB (_id INTEGER PRIMARY KEY,lat TEXT,lot TEXT,posName TEXT,posMemo TEXT);");
-        db.execSQL("CREATE TABLE posDB (_id TEXT PRIMARY KEY,lat TEXT,lot TEXT,posName TEXT,posMemo TEXT);");
+        db.execSQL("CREATE TABLE posDB (_id TEXT PRIMARY KEY,lat TEXT,lot TEXT,posName TEXT,posMemo TEXT, date TEXT);");
     }
 
     @Override
