@@ -109,8 +109,6 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
                 str = "データベースを削除しました";
                 Toast.makeText(getApplicationContext(), str, Toast.LENGTH_LONG).show();
             }
-
-
         });
         //requestLocationUpdates();
     }
@@ -144,9 +142,8 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
 
                 // マップにマーカーを追加
                 mMarker = mMap.addMarker(options);
-//                markerList.add(mMarker);
-
-                insertPosDataToDB(name, memo);
+                markerList.add(mMarker) ;
+                insertPosDataToDB(name, memo);   //データベースに格納
                 Toast.makeText(getApplicationContext(), "位置データを保存", Toast.LENGTH_LONG).show();
             }
         });
@@ -171,6 +168,20 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         }
     }
 
+    /**
+     *
+     * @param isVisible
+     */
+    private void setMarkerVisible(Boolean isVisible,String markerId){
+
+        Log.e(TAG, "dadadadada") ;
+        for(int i = markerList.size() -1 ; i >= 0;i--){
+            Marker marker = (Marker)markerList.get(i);
+            if (marker.getId().equals(markerId)) {
+                marker.setVisible(isVisible);    //各マーカーの表示
+            }
+        }
+    }
     /**
      * delete marker list content
      */
@@ -221,7 +232,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
      */
     private void insertPosDataToDB(String name, String memo){
         Date date = new Date() ;
-        DateFormat df = new SimpleDateFormat("yyyy/MM/dd") ;
+        DateFormat df = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss") ;
         ContentValues values = new ContentValues();
         values.put("_id", String.valueOf(mMarker.getId())) ;
         values.put("lat",valueOf(lastLocation.getLatitude()));
@@ -332,62 +343,66 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         mMap.animateCamera(CameraUpdateFactory.newCameraPosition(sydney));
         mMap.setMyLocationEnabled(true);  //display data on the map
 
-       // mMap.setInfoWindowAdapter(new MyInfoAdaper());  //自分用のアダプタをセットする
-       mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
-           @Override
-           public boolean onMarkerClick(Marker marker) {
+        // mMap.setInfoWindowAdapter(new MyInfoAdaper());  //自分用のアダプタをセットする
+        mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
+            @Override
+            public boolean onMarkerClick(Marker marker) {
 //               AlertDialog.Builder alertDlg = new AlertDialog.Builder(MapsActivity.this) ;
                 DialogFragment alertDlg = MyDialogFragment.newInstance(marker) ;
-               alertDlg.show(getFragmentManager(), "test") ;
+                alertDlg.show(getFragmentManager(), "test") ;
 
 //               MarkerActivity test = new MarkerActivity();
-               String name = marker.getTitle();
-               Toast.makeText(getApplicationContext(), name, Toast.LENGTH_LONG).show();
-               return false ;
-           }
-       });
+                String name = marker.getTitle();
+                Toast.makeText(getApplicationContext(), name, Toast.LENGTH_LONG).show();
+                return false ;
+            }
+        });
 //        mMap.setInfoWindowAdapter(new PopupWindow());  //自分用のアダプタをセットする
     }
 
     public class ListEachDateDialog extends DialogFragment{
-         @Override
+        @Override
         public Dialog onCreateDialog(Bundle savedInstanceState){
-             Cursor c = db.query("posDB",null, null, null, null, null, null);
-             ArrayList<CharSequence> dateList = new ArrayList<CharSequence>() ;
+            Cursor c = db.query("posDB",null, null, null, null, null, null);
+            ArrayList<CharSequence> dateList = new ArrayList<CharSequence>() ;
 
-             while(c.moveToNext()) {
+            while(c.moveToNext()) {
                 if (!dateList.contains(c.getString(c.getColumnIndex("date")))) {
                     dateList.add(c.getString(c.getColumnIndex("date"))) ;
-                 }
-
                 }
+
+            }
             final CharSequence[] items = new CharSequence[dateList.size()] ;
-             for(int i =0  ;i < dateList.size() ;i++ ){
+            for(int i =0  ;i < dateList.size() ;i++ ){
                 items[i] = dateList.get(i) ;
-             }
+            }
 
             AlertDialog.Builder builder = new AlertDialog.Builder(getActivity()) ;
             builder.setItems(items, new DialogInterface.OnClickListener() {
                 Cursor c = db.query("posDB",null, null, null, null, null, null);
                 @Override
                 public void onClick(DialogInterface dialogInterface, int i) {
-                   markerList = new ArrayList<Marker>()  ;
-                     //items[i]の日付を持つデータをデータベースから取り出す
-              while(c.moveToNext()) {
-                if (c.getString(c.getColumnIndex("date")).equals(items[i])) {
-                    String id =  c.getString(c.getColumnIndex("_id")) ;
-                    String lat =  c.getString(c.getColumnIndex("lat")) ;
-                    String lot =  c.getString(c.getColumnIndex("lot")) ;
-                    String posName =  c.getString(c.getColumnIndex("posName")) ;
-                    String posMemo =  c.getString(c.getColumnIndex("posMemo")) ;
-                    LatLng location = new LatLng(Float.valueOf(lat).floatValue(),Float.valueOf(lot).floatValue());
-                    MarkerOptions options = createMarkerOptions(location, posName, posMemo, null);
-                    Marker mMarker= mMap.addMarker(options) ;
-                    markerList.add(mMarker) ;
-                 }
 
-                }
-                    setMarkerListVisible(true);
+                    setMarkerListVisible(false);
+//                    markerList = new ArrayList<Marker>()  ;
+                    //items[i]の日付を持つデータをデータベースから取り出す
+                    while(c.moveToNext()) {
+                            if (c.getString(c.getColumnIndex("date")).equals(items[i])) {
+                                Log.e(TAG, "TTTTTTT") ;
+                                String id = c.getString(c.getColumnIndex("_id"));
+                                String lat = c.getString(c.getColumnIndex("lat"));
+                                String lot = c.getString(c.getColumnIndex("lot"));
+                                String posName = c.getString(c.getColumnIndex("posName"));
+                                String posMemo = c.getString(c.getColumnIndex("posMemo"));
+                                LatLng location = new LatLng(Float.valueOf(lat).floatValue(), Float.valueOf(lot).floatValue());
+//                    MarkerOptions options = createMarkerOptions(location, posName, posMemo, null);
+//                    Marker mMarker= mMap.addMarker(options) ;
+//                    markerList.add(mMarker) ;
+                                setMarkerVisible(true, id);
+                            }
+
+//                    setMarkerListVisible(true);
+                    }
                 }
             }) ;
             return builder.create() ;
@@ -437,9 +452,9 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
             db.delete("posDB", "_id=\""+dataId+"\"", null);
             Marker marker ;
             for(int i = markerList.size()-1 ;i >= 0 ;i--){
-               marker =  (Marker)markerList.get(i) ;
+                marker =  (Marker)markerList.get(i) ;
                 if (marker.getId().equals(dataId)){
-                   marker.remove();
+                    marker.remove();
                 }
             }
         }
