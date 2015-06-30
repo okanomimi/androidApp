@@ -10,6 +10,8 @@
     android:background="#EDEDED"
     android:orientation="vertical" >
 
+
+
     <LinearLayout
         android:orientation="horizontal"
         android:layout_width="fill_parent"
