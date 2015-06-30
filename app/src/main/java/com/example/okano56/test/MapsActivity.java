@@ -370,19 +370,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         public Dialog onCreateDialog(Bundle savedInstanceState){
             Cursor c = db.query("posDB",null, null, null, null, null, null);
 
-
-            ArrayList<CharSequence> dateList = new ArrayList<CharSequence>() ;
-
-            while(c.moveToNext()) {
-                if (!dateList.contains(c.getString(c.getColumnIndex("date")))) {
-                    dateList.add(c.getString(c.getColumnIndex("date"))) ;
-                }
-            }
-
-            final CharSequence[] items = new CharSequence[dateList.size()] ;
-            for(int i =0  ;i < dateList.size() ;i++ ){
-                items[i] = dateList.get(i) ;
-            }
+            final  CharSequence[] items = createItem(c) ;
 
             AlertDialog.Builder builder = new AlertDialog.Builder(getActivity()) ;
             builder.setItems(items, new DialogInterface.OnClickListener() {
@@ -406,6 +394,23 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
                 }
             }) ;
             return builder.create() ;
+        }
+
+        private CharSequence[] createItem(Cursor c){
+         ArrayList<CharSequence> dateList = new ArrayList<CharSequence>() ;
+
+            while(c.moveToNext()) {
+                if (!dateList.contains(c.getString(c.getColumnIndex("date")))) {
+                    dateList.add(c.getString(c.getColumnIndex("date"))) ;
+                }
+            }
+
+            final CharSequence[] items = new CharSequence[dateList.size()] ;
+            for(int i =0  ;i < dateList.size() ;i++ ){
+                items[i] = dateList.get(i) ;
+            }
+
+            return items ;
         }
     }
 
