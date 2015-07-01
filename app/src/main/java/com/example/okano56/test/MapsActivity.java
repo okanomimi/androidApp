@@ -185,6 +185,15 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
             }
         }
     }
+
+
+    private  static void hideInfoWindows(){
+        for(int i = markerList.size() -1 ; i >= 0;i--){
+            Marker marker = (Marker)markerList.get(i);
+            marker.hideInfoWindow();
+        }
+    }
+
     /**
      * delete marker list content
      */
@@ -348,16 +357,30 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
 //        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(sydney));
         mMap.setMyLocationEnabled(true);  //display data on the map
 
+        //マーカーをクリックした時の処理
         mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
             @Override
             public boolean onMarkerClick(Marker marker) {
-                marker.setInfoWindowAnchor(0, 0);
-                DialogFragment alertDlg = MyDialogFragment.newInstance(marker) ;
-                alertDlg.show(getFragmentManager(), "test") ;
-
+                marker.hideInfoWindow();
                 String name = marker.getTitle();
                 Toast.makeText(getApplicationContext(), name, Toast.LENGTH_LONG).show();
-                return false ;
+
+                return false;
+            }
+        });
+
+        //infowindowクリックした際の処理
+        mMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
+            @Override
+            public void onInfoWindowClick(Marker marker) {
+                if (marker.isInfoWindowShown()) {
+                    Log.e(TAG, "iffo");
+                    DialogFragment alertDlg = MyDialogFragment.newInstance(marker);
+                    alertDlg.show(getFragmentManager(), "test");
+                }else
+                    Log.e(TAG, "not") ;
+
+//                marker.hideInfoWindow();
             }
         });
     }
@@ -422,6 +445,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
             bunlde.putString("marker", marker.getTitle()) ;
             bunlde.putString("id", marker.getId()) ;
             myDialogFragment.setArguments(bunlde);
+
             return myDialogFragment ;
         }
 
