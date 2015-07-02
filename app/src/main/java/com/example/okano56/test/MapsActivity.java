@@ -5,7 +5,6 @@ import android.app.Dialog;
 import android.app.DialogFragment;
 import android.app.Service;
 import android.content.ContentValues;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -69,9 +68,20 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         myhelper = new MyDBHelper(this);
         db = myhelper.getWritableDatabase();
         mLocationManager = (LocationManager)this.getSystemService(Service.LOCATION_SERVICE);  //位置データを取る用
+        mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
         setUpMapIfNeeded();
-        LocationManager lm = (LocationManager)this.getSystemService(Context.LOCATION_SERVICE) ;
-        lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 500, 10, this);
+//        LocationManager lm = (LocationManager)this.getSystemService(Context.LOCATION_SERVICE) ;
+//        lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 500, 10, this);
+        Location location = mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+        lastLocation = location ;
+
+        //3Gやwifiから位置情報を取得できるかどうか
+        if (mLocationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER))
+            Log.e(TAG, "netOk") ;
+
+        //GPSから位置情報を取得できるかどうか
+        if(mLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER))
+            Log.e(TAG, "gpsOk") ;
 
         Button saveButton = (Button) findViewById(R.id.saveMapData);  //
         saveButton.setOnClickListener(new OnClickListener() {
@@ -87,7 +97,6 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         outputButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-
                 DialogFragment alertDialog = new ListEachDateDialog() ;
                 alertDialog.show(getFragmentManager(), "ddd") ;
                 Cursor c = db.query("posDB",null, null, null, null, null, null);
@@ -97,8 +106,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
                             c.getString(c.getColumnIndex("lat")) + ":"+
                             c.getString(c.getColumnIndex("lot")) + "\n";
                 }
-                //setMarkerListVisible(true);
-                Log.e(TAG,str);
+                Log.e(TAG, str);
             }
         });
 
@@ -107,12 +115,11 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
             @Override
             public void onClick(View v) {
                 deleteAllPosDatabese();   //delete posDB's data
-                deleteMarkerList() ;   //delete markers
+                deleteMarkerList();   //delete markers
                 str = "データベースを削除しました";
                 Toast.makeText(getApplicationContext(), str, Toast.LENGTH_LONG).show();
             }
         });
-        //requestLocationUpdates();
     }
 
     //locationデータを保存するようのダイアログ
@@ -138,6 +145,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
                 String memo = posMemo.getText().toString();
 
                 BitmapDescriptor icon = BitmapDescriptorFactory.fromResource(R.drawable.icon_109850);
+
                 LatLng location = new LatLng(lastLocation.getLatitude(), lastLocation.getLongitude());
 
                 // マーカーの設定
@@ -157,7 +165,6 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
             }
         });
         builder.create().show();
-
     }
 
     /**
@@ -349,8 +356,10 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
                 this);
 
         //get location data
-        Location location = mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-
+//        Location location = mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+//        Location location = mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+//        lastLocation = location ;
+//        mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 10000, 10, this);
 //        CameraPosition sydney = new CameraPosition.Builder()
 //                .target(new LatLng(location.getLatitude(),location.getLongitude())).zoom(15.5f)
 //                .bearing(0).tilt(25).build();
@@ -373,14 +382,9 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         mMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
             @Override
             public void onInfoWindowClick(Marker marker) {
-                if (marker.isInfoWindowShown()) {
-                    Log.e(TAG, "iffo");
+                    //ダイアログを表示
                     DialogFragment alertDlg = MyDialogFragment.newInstance(marker);
                     alertDlg.show(getFragmentManager(), "test");
-                }else
-                    Log.e(TAG, "not") ;
-
-//                marker.hideInfoWindow();
             }
         });
     }
