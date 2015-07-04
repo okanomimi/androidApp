@@ -41,7 +41,7 @@ import static java.lang.String.valueOf;
 
 public class MapsActivity extends FragmentActivity implements LocationListener{
 
-    private GoogleMap mMap; // Might be null if Google Play services APK is not available.
+    private static GoogleMap mMap; // Might be null if Google Play services APK is not available.
     private static final String TAG = MapsActivity.class.getSimpleName();
     // 更新時間(目安)
     private static final int LOCATION_UPDATE_MIN_TIME = 0;
@@ -52,9 +52,10 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
     private  MyDBHelper myhelper ;   //to create database
     private  static SQLiteDatabase db;    //database
     private String str;
-    private Marker mMarker;
+    private static Marker mMarker;
     public static ArrayList markerList;
     private Location lastLocation;
+    private boolean isSave = false ;
 
     private PopupWindow markerPopupWindow ;
 
@@ -70,8 +71,8 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         mLocationManager = (LocationManager)this.getSystemService(Service.LOCATION_SERVICE);  //位置データを取る用
         mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
         setUpMapIfNeeded();
-//        LocationManager lm = (LocationManager)this.getSystemService(Context.LOCATION_SERVICE) ;
-//        lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 500, 10, this);
+
+        //直近に取得したGPSデータを取得する。
         Location location = mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
         lastLocation = location ;
 
@@ -83,17 +84,30 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         if(mLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER))
             Log.e(TAG, "gpsOk") ;
 
+        //「データを保存する」ボタン
         Button saveButton = (Button) findViewById(R.id.saveMapData);  //
         saveButton.setOnClickListener(new OnClickListener() {
                                           @Override
                                           public void onClick(View v){
-                                              saveDialog();
+                                              isSave = true ;
+
+                                              Toast.makeText(getApplicationContext(), "保存開始", Toast.LENGTH_LONG).show();
+//                                              saveDialog();
                                           }
                                       }
         );
 
-//        requestLocationUpdates();
-        Button outputButton = (Button) findViewById(R.id.openMapData);      //マップデータを表示するボタンの実装
+        //「保存終了」ボタン
+        Button endSaveButton = (Button) findViewById(R.id.endSave) ;
+        endSaveButton.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View view) {
+               isSave = false  ;
+               Toast.makeText(getApplicationContext(), "保存終了", Toast.LENGTH_LONG).show();
+            }
+        });
+        //マップデータを表示するボタンの実装
+        Button outputButton = (Button) findViewById(R.id.openMapData);
         outputButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -110,7 +124,8 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
             }
         });
 
-        Button deleteButton = (Button) findViewById(R.id.deleteButton);  //データベースのすべてのデータを削除する
+        //データベースのすべてのデータを削除する
+        Button deleteButton = (Button) findViewById(R.id.deleteButton);
         deleteButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -124,7 +139,6 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
 
     //locationデータを保存するようのダイアログ
     private void saveDialog(){
-
         LayoutInflater inflater = (LayoutInflater)this
                 .getSystemService(LAYOUT_INFLATER_SERVICE);
         final View layout = inflater.inflate(
@@ -154,7 +168,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
                 // マップにマーカーを追加
                 mMarker = mMap.addMarker(options);
                 markerList.add(mMarker) ;
-                insertPosDataToDB(name, memo);   //データベースに格納
+//                insertPosDataToDB(name, memo);   //データベースに格納
                 Toast.makeText(getApplicationContext(), "位置データを保存", Toast.LENGTH_LONG).show();
             }
         });
@@ -249,13 +263,15 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
      * @param name
      * @param memo
      */
-    private void insertPosDataToDB(String name, String memo){
+    private void insertPosDataToDB(Location location, String name, String memo){
         Date date = new Date() ;
         DateFormat df = new SimpleDateFormat("yyyy/MM/dd") ;
         ContentValues values = new ContentValues();
-        values.put("_id", String.valueOf(mMarker.getId())) ;
-        values.put("lat",valueOf(lastLocation.getLatitude()));
-        values.put("lot",valueOf(lastLocation.getLongitude()));
+//        values.put("_id", String.valueOf(mMarker.getId())) ;
+//        values.put("lat",valueOf(lastLocation.getLatitude()));
+        values.put("lat",valueOf(location.getLatitude()));
+//        values.put("lot",valueOf(lastLocation.getLongitude()));
+        values.put("lot",valueOf(location.getLongitude()));
         values.put("posName", valueOf(name));
         values.put("posMemo", valueOf(memo));
         values.put("date", valueOf(df.format(date)));
@@ -272,13 +288,16 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
     public void onLocationChanged(Location location) {
 
         Log.e(TAG, "onStatusChanged.");
-        lastLocation = location;   //直近のlocationデータを保存
+        //あとで住所を入力できるように
+        if (isSave)
+            insertPosDataToDB(location, "test", "test");
     }
 
     // Called when the provider status changed.
     @Override
     public void onStatusChanged(String provider, int status, Bundle extras) {
         //Log.e(TAG, "onStatusChanged.");
+
     }
 
     @Override
@@ -415,9 +434,13 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
                                 String posName = c.getString(c.getColumnIndex("posName"));
                                 String posMemo = c.getString(c.getColumnIndex("posMemo"));
                                 LatLng location = new LatLng(Float.valueOf(lat).floatValue(), Float.valueOf(lot).floatValue());
-                                setMarkerVisible(true, id);
+                                MarkerOptions options = createMarkerOptions(location, "test", "test", null);
+                                mMarker = mMap.addMarker(options);
+                                markerList.add(mMarker) ;
+//                                setMarkerVisible(true, id);
                             }
                     }
+                    setMarkerListVisible(true);
                 }
             }) ;
             return builder.create() ;
@@ -460,16 +483,17 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
             builder.setItems(items, new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialogInterface, int i) {
-                    switch (i){
+                    switch (i) {
                         case 0:
-                            Toast.makeText(getActivity(), "edit", Toast.LENGTH_LONG).show() ;
-                            break ;
+                            Toast.makeText(getActivity(), "edit", Toast.LENGTH_LONG).show();
+                            editData();
+                            break;
                         case 1:
-                            Toast.makeText(getActivity(), "delete", Toast.LENGTH_LONG).show() ;
-                            delete_data() ;
-                            break ;
+                            Toast.makeText(getActivity(), "delete", Toast.LENGTH_LONG).show();
+                            deleteData();
+                            break;
                         default:
-                            break ;
+                            break;
 
                     }
                 }
@@ -480,19 +504,86 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         /**
          *マーカーデータを消すことができるメソッド
          */
-        private void delete_data(){
+        private void editData(){
+            String dataId = getArguments().getString("id") ;
+            Marker marker = getMarkerById(dataId);
+
+
+//            LayoutInflater inflater = LayoutInflater.from(this) ;
+            LayoutInflater inflater = getActivity().getLayoutInflater() ;
+            final View layout = inflater.inflate(  R.layout.save_pos_data,null);
+//            LayoutInflater inflater = (LayoutInflater)context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+
+            AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+            builder.setTitle("test");
+            builder.setView(layout);
+            builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    EditText posName = (EditText) layout.findViewById(R.id.edit_text);
+                    EditText posMemo = (EditText) layout.findViewById(R.id.edit_text2);
+                    String name = posName.getText().toString();
+                    String memo = posMemo.getText().toString();
+
+                    BitmapDescriptor icon = BitmapDescriptorFactory.fromResource(R.drawable.icon_109850);
+
+//                    LatLng location = new LatLng(lastLocation.getLatitude(), lastLocation.getLongitude());
+
+                    // マーカーの設定
+//                    MarkerOptions options = createMarkerOptions(location, name, memo, icon);
+
+                    // マップにマーカーを追加
+//                    mMarker = mMap.addMarker(options);
+//                    markerList.add(mMarker) ;
+//                    insertPosDataToDB(name, memo);   //データベースに格納
+//                    Toast.makeText(getApplicationContext(), "位置データを保存", Toast.LENGTH_LONG).show();
+                }
+            });
+            builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+
+                }
+            });
+            builder.create().show();
+//            TextView markersIdText = (TextView)view.findViewById(R.id.markersId) ;
+//            TextView title = (TextView)view.findViewById(R.id.title_text) ;
+//            TextView snippet = (TextView)view.findViewById(R.id.context_text) ;
+
+//            markersIdText.setText(marker.getId());
+//            title.setText(marker.getTitle()) ;
+//            snippet.setText(marker.getSnippet()) ;
+
+//            db.update("posDB", "_id=\""+dataId+"\"", null);
+        }
+        /**
+         *マーカーデータを消すことができるメソッド
+         */
+        private void deleteData(){
             String dataId = getArguments().getString("id") ;
             db.delete("posDB", "_id=\""+dataId+"\"", null);
-            Marker marker ;
-            for(int i = markerList.size()-1 ;i >= 0 ;i--){
-                marker =  (Marker)markerList.get(i) ;
-                if (marker.getId().equals(dataId)){
-                    marker.remove();
-                }
-            }
+            Marker marker = getMarkerById(dataId);
+            marker.remove();
         }
     }
 
+    /**
+     * 引数のIDとマーカーについてるIDが一致していれば、取得。
+     * @param id
+     * @return
+     */
+    private static Marker getMarkerById(String id){
+        Marker marker = null;
+            for(int i = markerList.size()-1 ;i >= 0 ;i--){
+                marker =  (Marker)markerList.get(i) ;
+                if (marker.getId().equals(id)){
+                    marker.remove();
+                }
+            }
+        if (marker == null)
+               Log.e(TAG, "Err marker is null")  ;
+        return marker ;
+    }
     /**
      *
      *  Markerの吹き出しを自分用に変更したやつ。
