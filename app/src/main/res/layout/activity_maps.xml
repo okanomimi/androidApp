@@ -23,28 +23,28 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="保存開始"
+            android:text="start save"
             android:id="@+id/saveMapData" />
 
         <Button
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="保存終了"
+            android:text="end save"
             android:id="@+id/endSave" />
 
         <Button
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="データ表示"
+            android:text="output data"
             android:id="@+id/openMapData" />
 
         <Button
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="全データ削除"
+            android:text="delete datas"
             android:id="@+id/deleteButton" />
 
     </LinearLayout>

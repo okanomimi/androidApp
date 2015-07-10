@@ -23,10 +23,12 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -55,7 +57,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
     private String str;
     private static Marker mMarker;
     public static ArrayList markerList;
-    private Location lastLocation;
+    private Location lastLocation;      //直近のポジションデータ保存用
     private boolean isSave = false ;
     private static HashMap<Marker, String> markerHash ;   //markerにデータベースと同じidを設定できないので、これで代用
     private int markerId ;
@@ -65,7 +67,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         super.onCreate(savedInstanceState);
         markerHash  = new HashMap<Marker, String>();
         markerId = 0 ;
-        deleteDatabase("posDB");
+//        deleteDatabase("posDB");
         markerList = new ArrayList<Marker>();
         setContentView(R.layout.activity_maps);
         myhelper = new MyDBHelper(this);
@@ -92,7 +94,6 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
                                           @Override
                                           public void onClick(View v){
                                               isSave = true ;
-
                                               Toast.makeText(getApplicationContext(), "保存開始", Toast.LENGTH_LONG).show();
 //                                              saveDialog();
                                           }
@@ -104,8 +105,8 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         endSaveButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
-               isSave = false  ;
-               Toast.makeText(getApplicationContext(), "保存終了", Toast.LENGTH_LONG).show();
+                isSave = false  ;
+                Toast.makeText(getApplicationContext(), "保存終了", Toast.LENGTH_LONG).show();
             }
         });
         //マップデータを表示するボタンの実装
@@ -350,6 +351,16 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
     }
 
     /**
+     * カメラのポジションを指定したマーカーの場所にする
+     * @param marker
+     */
+    private static void cameraPosToMarker(Marker marker){
+        CameraPosition sydney = new CameraPosition.Builder()
+                .target(marker.getPosition()).zoom(15.5f)
+                .bearing(0).tilt(25).build();
+        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(sydney));
+    }
+    /**
      * Sets up the map if it is possible to do so (i.e., the Google Play services APK is correctly
      * installed) and the map has not already been instantiated.. This will ensure that we only ever
      * call {@link #setUpMap()} once when {@link #mMap} is not null.
@@ -379,7 +390,6 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
     }
 
 
-
     /**
      * This is where we can add markers or lines, add listeners or move the camera. In this case, we
      * just add a marker near Africa.
@@ -403,15 +413,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
 //                LOCATION_UPDATE_MIN_DISTANCE,
 //                this);
 //         }
-        //get location data
-//        Location location = mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-//        Location location = mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-//        lastLocation = location ;
-//        mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 10000, 10, this);
-//        CameraPosition sydney = new CameraPosition.Builder()
-//                .target(new LatLng(location.getLatitude(),location.getLongitude())).zoom(15.5f)
-//                .bearing(0).tilt(25).build();
-//        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(sydney));
+
         mMap.setMyLocationEnabled(true);  //display data on the map
 
         //マーカーをクリックした時の処理
@@ -430,15 +432,15 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         mMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
             @Override
             public void onInfoWindowClick(Marker marker) {
-                    //ダイアログを表示
-                    DialogFragment alertDlg = MyDialogFragment.newInstance(marker);
-                    alertDlg.show(getFragmentManager(), "test");
+                //ダイアログを表示
+                DialogFragment alertDlg = MyDialogFragment.newInstance(marker);
+                alertDlg.show(getFragmentManager(), "test");
             }
         });
     }
 
     /**
-        「データ表示」を押した時のリストを出すクラス
+     「データ表示」を押した時のリストを出すクラス
      */
     public static class ListEachDateDialog extends DialogFragment{
         @Override
@@ -456,29 +458,33 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
                     markerList = new ArrayList<Marker>();   //マーカーの初期化
                     //items[i]の日付を持つデータをデータベースから取り出す
                     while(c.moveToNext()) {
-                            if (c.getString(c.getColumnIndex("date")).equals(items[i])) {
-                                Log.e(TAG, "TTTTTTT") ;
-                                String id = c.getString(c.getColumnIndex("_id"));
-                                String lat = c.getString(c.getColumnIndex("lat"));
-                                String lot = c.getString(c.getColumnIndex("lot"));
-                                String posName = c.getString(c.getColumnIndex("posName"));
-                                String posMemo = c.getString(c.getColumnIndex("posMemo"));
-                                LatLng location = new LatLng(Float.valueOf(lat).floatValue(), Float.valueOf(lot).floatValue());
-                                MarkerOptions options = createMarkerOptions(location, posName, posMemo, null);
-                                mMarker = mMap.addMarker(options);
-                                markerList.add(mMarker) ;
-                                markerHash.put(mMarker, id) ;
+                        if (c.getString(c.getColumnIndex("date")).equals(items[i])) {
+                            Log.e(TAG, "TTTTTTT") ;
+                            String id = c.getString(c.getColumnIndex("_id"));
+                            String lat = c.getString(c.getColumnIndex("lat"));
+                            String lot = c.getString(c.getColumnIndex("lot"));
+                            String posName = c.getString(c.getColumnIndex("posName"));
+                            String posMemo = c.getString(c.getColumnIndex("posMemo"));
+                            LatLng location = new LatLng(Float.valueOf(lat).floatValue(), Float.valueOf(lot).floatValue());
+                            MarkerOptions options = createMarkerOptions(location, posName, posMemo, null);
+                            mMarker = mMap.addMarker(options);
+                            markerList.add(mMarker) ;
+                            markerHash.put(mMarker, id) ;
 //                                setMarkerVisible(true, id);
-                            }
+                        }
                     }
                     setMarkerListVisible(true);
+
+                    Marker firstMarker = (Marker) markerList.get(0);
+                    cameraPosToMarker(firstMarker) ;
+
                 }
             }) ;
             return builder.create() ;
         }
 
         private CharSequence[] createItem(Cursor c){
-         ArrayList<CharSequence> dateList = new ArrayList<CharSequence>() ;
+            ArrayList<CharSequence> dateList = new ArrayList<CharSequence>() ;
 
             while(c.moveToNext()) {
                 if (!dateList.contains(c.getString(c.getColumnIndex("date")))) {
@@ -572,19 +578,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
                     db.update("posDB", values, "_id=\"" + String.valueOf(dataId) + "\"", null) ;
                     marker.hideInfoWindow();
                     marker.setTitle(name) ;
-
                     marker.showInfoWindow();
-//        db.delete("posDB", "_id=\""+id+"\"", null);
-//                    LatLng location = new LatLng(lastLocation.getLatitude(), lastLocation.getLongitude());
-
-                    // マーカーの設定
-//                    MarkerOptions options = createMarkerOptions(location, name, memo, icon);
-
-                    // マップにマーカーを追加
-//                    mMarker = mMap.addMarker(options);
-//                    markerList.add(mMarker) ;
-//                    insertPosDataToDB(name, memo);   //データベースに格納
-//                    Toast.makeText(getApplicationContext(), "位置データを保存", Toast.LENGTH_LONG).show();
                 }
             });
             builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -594,15 +588,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
                 }
             });
             builder.create().show();
-//            TextView markersIdText = (TextView)view.findViewById(R.id.markersId) ;
-//            TextView title = (TextView)view.findViewById(R.id.title_text) ;
-//            TextView snippet = (TextView)view.findViewById(R.id.context_text) ;
 
-//            markersIdText.setText(marker.getId());
-//            title.setText(marker.getTitle()) ;
-//            snippet.setText(marker.getSnippet()) ;
-
-//            db.update("posDB", "_id=\""+dataId+"\"", null);
         }
 
         /**
@@ -636,9 +622,9 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
 
     private static Marker getMarkerById(String id){
         for(Map.Entry<Marker, String> entry : markerHash.entrySet()){
-           if (entry.getValue() == id) {
-               return entry.getKey();
-           }
+            if (entry.getValue() == id) {
+                return entry.getKey();
+            }
         }
         return null ;
     }
