@@ -8,6 +8,7 @@ import android.content.ContentValues;
 import android.content.DialogInterface;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.graphics.Color;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -32,6 +33,8 @@ import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.Polyline;
+import com.google.android.gms.maps.model.PolylineOptions;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -57,6 +60,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
     private String str;
     private static Marker mMarker;
     public static ArrayList markerList;
+    public static ArrayList lineList;
     private Location lastLocation;      //直近のポジションデータ保存用
     private boolean isSave = false ;
     private static HashMap<Marker, String> markerHash ;   //markerにデータベースと同じidを設定できないので、これで代用
@@ -67,8 +71,9 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         super.onCreate(savedInstanceState);
         markerHash  = new HashMap<Marker, String>();
         markerId = 0 ;
-//        deleteDatabase("posDB");
+        deleteDatabase("posDB");
         markerList = new ArrayList<Marker>();
+        lineList = new ArrayList<Polyline>();
         setContentView(R.layout.activity_maps);
         myhelper = new MyDBHelper(this);
         db = myhelper.getWritableDatabase();
@@ -134,6 +139,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
             public void onClick(View v) {
                 deleteAllPosDatabese();   //delete posDB's data
                 deleteMarkerList();   //delete markers
+                deleteLineList(lineList);
                 str = "データベースを削除しました";
                 Toast.makeText(getApplicationContext(), str, Toast.LENGTH_LONG).show();
             }
@@ -247,6 +253,46 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
             id= c.getString(c.getColumnIndex("_id"));
             db.delete("posDB", "_id=\""+id+"\"", null);
         }
+    }
+
+    /**
+     * 点と点を線でつなぐ
+     * @param
+     */
+    private static void drawLines(ArrayList<Marker> markerList){
+        int markerNum = 0 ;
+        lineList = new ArrayList<Polyline>() ;
+        LatLng from = null ;
+        LatLng to = null ;
+        for(Marker marker: markerList){
+           if (markerNum == 0){
+              from = marker.getPosition()  ;
+           }else{
+               to = marker.getPosition() ;
+              Polyline line = mMap.addPolyline(new PolylineOptions()
+                               .add(from, to)
+                               .width(1)
+                               .color(Color.BLACK)
+               ) ;
+               lineList.add(line) ;
+               from = to ;
+           }
+            markerNum++ ;
+        }
+    }
+
+    private static void deleteLineList(ArrayList<Polyline> lineList){
+       for(Polyline line: lineList){
+           line.setVisible(false);
+       }
+        lineList = null ;
+    }
+
+    private static void removeMarker(ArrayList<Marker> markerList, String dataId){
+        db.delete("posDB", "_id=\""+dataId+"\"", null);
+        Marker marker = getMarkerById(dataId);
+        markerList.remove((markerList.indexOf(marker))) ;       //リストから削除
+        marker.remove();
     }
 
     /**
@@ -389,7 +435,6 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         }
     }
 
-
     /**
      * This is where we can add markers or lines, add listeners or move the camera. In this case, we
      * just add a marker near Africa.
@@ -473,6 +518,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
 //                                setMarkerVisible(true, id);
                         }
                     }
+                    drawLines(markerList) ;
                     setMarkerListVisible(true);
 
                     Marker firstMarker = (Marker) markerList.get(0);
@@ -528,6 +574,8 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
                         case 1:
                             Toast.makeText(getActivity(), "delete", Toast.LENGTH_LONG).show();
                             deleteData();
+                            deleteLineList(lineList);   //現在描かれいるラインを消す
+                            drawLines(markerList);      //もう一度ラインを絵画
                             break;
                         default:
                             break;
@@ -546,10 +594,8 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
             final Marker marker = getMarkerById(dataId);
 
 
-//            LayoutInflater inflater = LayoutInflater.from(this) ;
             LayoutInflater inflater = getActivity().getLayoutInflater() ;
             final View layout = inflater.inflate(  R.layout.save_pos_data,null);
-//            LayoutInflater inflater = (LayoutInflater)context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 
             AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
             builder.setTitle("test");
@@ -596,9 +642,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
          */
         private void deleteData(){
             String dataId = getArguments().getString("id") ;
-            db.delete("posDB", "_id=\""+dataId+"\"", null);
-            Marker marker = getMarkerById(dataId);
-            marker.remove();
+            removeMarker(markerList, dataId);
         }
     }
 
