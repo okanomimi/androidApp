@@ -30,13 +30,6 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="end save"
-            android:id="@+id/endSave" />
-
-        <Button
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
             android:text="output data"
             android:id="@+id/openMapData" />
 

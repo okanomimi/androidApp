@@ -65,13 +65,14 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
     private boolean isSave = false ;
     private static HashMap<Marker, String> markerHash ;   //markerにデータベースと同じidを設定できないので、これで代用
     private int markerId ;
+    int OUT_OF_SERVICE = 0 ;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        markerHash  = new HashMap<Marker, String>();
+        markerHash  = new HashMap<Marker, String>();    //データベースのマーカーIDとマーカーリストのIDとを一致させるためのハッシュ
         markerId = 0 ;
-        deleteDatabase("posDB");
+//        deleteDatabase("posDB");
         markerList = new ArrayList<Marker>();
         lineList = new ArrayList<Polyline>();
         setContentView(R.layout.activity_maps);
@@ -94,26 +95,27 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
             Log.e(TAG, "gpsOk") ;
 
         //「データを保存する」ボタン
-        Button saveButton = (Button) findViewById(R.id.saveMapData);  //
+        final Button saveButton = (Button) findViewById(R.id.saveMapData);  //
         saveButton.setOnClickListener(new OnClickListener() {
                                           @Override
                                           public void onClick(View v){
-                                              isSave = true ;
-                                              Toast.makeText(getApplicationContext(), "保存開始", Toast.LENGTH_LONG).show();
+                                              if (isSave) {
+                                                  isSave = false ;
+                                                  Toast.makeText(getApplicationContext(), "保存終了", Toast.LENGTH_LONG).show();
+                                                  saveButton.setBackgroundColor(Color.WHITE);
+                                                  saveButton.setText("finish save") ;
+                                              }else{
+                                                  isSave = true  ;
+                                                  Toast.makeText(getApplicationContext(), "保存開始", Toast.LENGTH_LONG).show();
+                                                  saveButton.setBackgroundColor(Color.GRAY);
+                                                    saveButton.setText("start save") ;
+                                              }
 //                                              saveDialog();
                                           }
                                       }
         );
 
-        //「保存終了」ボタン
-        Button endSaveButton = (Button) findViewById(R.id.endSave) ;
-        endSaveButton.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                isSave = false  ;
-                Toast.makeText(getApplicationContext(), "保存終了", Toast.LENGTH_LONG).show();
-            }
-        });
+
         //マップデータを表示するボタンの実装
         Button outputButton = (Button) findViewById(R.id.openMapData);
         outputButton.setOnClickListener(new OnClickListener() {
@@ -207,7 +209,6 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
      */
     private static void setMarkerVisible(Boolean isVisible, String markerId){
 
-        Log.e(TAG, "dadadadada") ;
         for(int i = markerList.size() -1 ; i >= 0;i--){
             Marker marker = (Marker)markerList.get(i);
             if (marker.getId().equals(markerId)) {
@@ -344,12 +345,12 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
     @Override
     public void onLocationChanged(Location location) {
 
+        Toast.makeText(getApplicationContext(), "onLocationChanged", Toast.LENGTH_LONG).show();
+//                Log.e(TAG, String.valueOf(getDistance(lastLocation, location)*100.0));
 //        Log.e(TAG, "onStatusChanged.");
         //@note あとで住所を入力できるように
         if (isSave) {
-
             if (lastLocation != null) {
-
 //                Log.e(TAG, String.valueOf(getDistance(lastLocation, location)*100.0));
                 //@note あとで住所を入力できるように
                 if (getDistance(lastLocation, location)*100.0 > 0.1) {  //座標のズレが誤差以上であれば保存
@@ -366,8 +367,23 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
     // Called when the provider status changed.
     @Override
     public void onStatusChanged(String provider, int status, Bundle extras) {
-        //Log.e(TAG, "onStatusChanged.");
+        Toast.makeText(getApplicationContext(), "onStatusChanged.", Toast.LENGTH_LONG).show();
+        if (status == OUT_OF_SERVICE) {     //位置取得をしていたプロバイダが切り替わったら呼び出し
+            if (provider.equals(LocationManager.NETWORK_PROVIDER)){     //現在NETWORK_PROVIDERから接続していたなら
+                    mLocationManager.requestLocationUpdates(
+                    LocationManager.GPS_PROVIDER,
+                    LOCATION_UPDATE_MIN_TIME,
+                    LOCATION_UPDATE_MIN_DISTANCE,
+                    this);
+            }else{
+                mLocationManager.requestLocationUpdates(
+                LocationManager.NETWORK_PROVIDER,
+                LOCATION_UPDATE_MIN_TIME,
+                LOCATION_UPDATE_MIN_DISTANCE,
+                this);
 
+         }
+        }
     }
 
     @Override
@@ -442,23 +458,27 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
      * This should only be called once and when we are sure that {@link #mMap} is not null.
      */
     private void setUpMap() {
-        mMap.setTrafficEnabled(true); //display traffic data
+        //3Gやwifiから位置情報を取得できるかどうか
+        if (mLocationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER))
+            Log.e(TAG, "netOk") ;
 
+        //GPSから位置情報を取得できるかどうか
+            Log.e(TAG, "gpsOk") ;
         //requestLocation data
-        mLocationManager.requestLocationUpdates(
-                //LocationManager.NETWORK_PROVIDER,
-                LocationManager.GPS_PROVIDER,
+
+        if(mLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+            mLocationManager.requestLocationUpdates(
+                    LocationManager.GPS_PROVIDER,
+                    LOCATION_UPDATE_MIN_TIME,
+                    LOCATION_UPDATE_MIN_DISTANCE,
+                    this);
+        }else {
+                mLocationManager.requestLocationUpdates(
+                LocationManager.NETWORK_PROVIDER,
                 LOCATION_UPDATE_MIN_TIME,
                 LOCATION_UPDATE_MIN_DISTANCE,
                 this);
-//         if (mLocationManager == null){         //GPSが無効であれば
-//                mLocationManager.requestLocationUpdates(
-//                LocationManager.NETWORK_PROVIDER,
-//                LOCATION_UPDATE_MIN_TIME,
-//                LOCATION_UPDATE_MIN_DISTANCE,
-//                this);
-//         }
-
+        }
         mMap.setMyLocationEnabled(true);  //display data on the map
 
         //マーカーをクリックした時の処理
@@ -500,6 +520,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
                 @Override
                 public void onClick(DialogInterface dialogInterface, int i) {
                     setMarkerListVisible(false);
+                    deleteLineList(lineList);
                     markerList = new ArrayList<Marker>();   //マーカーの初期化
                     //items[i]の日付を持つデータをデータベースから取り出す
                     while(c.moveToNext()) {
