@@ -55,7 +55,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
     private static final int LOCATION_UPDATE_MIN_DISTANCE = 0;
     private LocationManager mLocationManager;
 
-    private  MyDBHelper myhelper ;   //to create database
+    private LocationDBHelper locationDBHelper;   //to create database
     private  static SQLiteDatabase db;    //database
     private String str;
     private static Marker mMarker;
@@ -63,21 +63,24 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
     public static ArrayList lineList;
     private Location lastLocation;      //直近のポジションデータ保存用
     private boolean isSave = false ;
-    private static HashMap<Marker, String> markerHash ;   //markerにデータベースと同じidを設定できないので、これで代用
+    private static HashMap<Marker,Integer> markerHash ;   //markerにデータベースと同じidを設定できないので、これで代用
     private int markerId ;
     int OUT_OF_SERVICE = 0 ;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        markerHash  = new HashMap<Marker, String>();    //データベースのマーカーIDとマーカーリストのIDとを一致させるためのハッシュ
-        markerId = 0 ;
-//        deleteDatabase("posDB");
+//        markerHash  = new HashMap<Marker, String>();    //データベースのマーカーIDとマーカーリストのIDとを一致させるためのハッシュ
+        markerHash  = new HashMap<Marker,Integer>();    //データベースのマーカーIDとマーカーリストのIDとを一致させるためのハッシュ
+
+//        markerId = 0 ;
+        deleteDatabase("posDB");
         markerList = new ArrayList<Marker>();
         lineList = new ArrayList<Polyline>();
         setContentView(R.layout.activity_maps);
-        myhelper = new MyDBHelper(this);
-        db = myhelper.getWritableDatabase();
+        locationDBHelper = new LocationDBHelper(this);
+        db = locationDBHelper.getWritableDatabase();
+
         mLocationManager = (LocationManager)this.getSystemService(Service.LOCATION_SERVICE);  //位置データを取る用
         mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
         setUpMapIfNeeded();
@@ -86,13 +89,6 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         Location location = mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
         lastLocation = location ;
 
-        //3Gやwifiから位置情報を取得できるかどうか
-        if (mLocationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER))
-            Log.e(TAG, "netOk") ;
-
-        //GPSから位置情報を取得できるかどうか
-        if(mLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER))
-            Log.e(TAG, "gpsOk") ;
 
         //「データを保存する」ボタン
         final Button saveButton = (Button) findViewById(R.id.saveMapData);  //
@@ -103,12 +99,12 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
                                                   isSave = false ;
                                                   Toast.makeText(getApplicationContext(), "保存終了", Toast.LENGTH_LONG).show();
                                                   saveButton.setBackgroundColor(Color.WHITE);
-                                                  saveButton.setText("finish save") ;
+                                                  saveButton.setText("start save") ;
                                               }else{
                                                   isSave = true  ;
                                                   Toast.makeText(getApplicationContext(), "保存開始", Toast.LENGTH_LONG).show();
                                                   saveButton.setBackgroundColor(Color.GRAY);
-                                                    saveButton.setText("start save") ;
+                                                  saveButton.setText("finish save") ;
                                               }
 //                                              saveDialog();
                                           }
@@ -266,34 +262,34 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         LatLng from = null ;
         LatLng to = null ;
         for(Marker marker: markerList){
-           if (markerNum == 0){
-              from = marker.getPosition()  ;
-           }else{
-               to = marker.getPosition() ;
-              Polyline line = mMap.addPolyline(new PolylineOptions()
-                               .add(from, to)
-                               .width(1)
-                               .color(Color.BLACK)
-               ) ;
-               lineList.add(line) ;
-               from = to ;
-           }
+            if (markerNum == 0){
+                from = marker.getPosition()  ;
+            }else{
+                to = marker.getPosition() ;
+                Polyline line = mMap.addPolyline(new PolylineOptions()
+                                .add(from, to)
+                                .width(1)
+                                .color(Color.BLACK)
+                ) ;
+                lineList.add(line) ;
+                from = to ;
+            }
             markerNum++ ;
         }
     }
 
     private static void deleteLineList(ArrayList<Polyline> lineList){
-       for(Polyline line: lineList){
-           line.setVisible(false);
-       }
+        for(Polyline line: lineList){
+            line.setVisible(false);
+        }
         lineList = null ;
     }
 
-    private static void removeMarker(ArrayList<Marker> markerList, String dataId){
-        db.delete("posDB", "_id=\""+dataId+"\"", null);
+    private static void removeMarker(ArrayList<Marker> markerList, int dataId){
         Marker marker = getMarkerById(dataId);
         markerList.remove((markerList.indexOf(marker))) ;       //リストから削除
         marker.remove();
+        db.delete("posDB", "_id=\"" + String.valueOf(dataId) + "\"", null);
     }
 
     /**
@@ -327,7 +323,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         DateFormat df = new SimpleDateFormat("yyyy/MM/dd") ;
         ContentValues values = new ContentValues();
 //        values.put("_id", String.valueOf(mMarker.getId())) ;
-        values.put("_id", String.valueOf(markerId++)) ;
+//        values.put("_id", String.valueOf(markerId++)) ;
         values.put("lat",valueOf(location.getLatitude()));
         values.put("lot",valueOf(location.getLongitude()));
         values.put("posName", valueOf(name));
@@ -345,7 +341,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
     @Override
     public void onLocationChanged(Location location) {
 
-        Toast.makeText(getApplicationContext(), "onLocationChanged", Toast.LENGTH_LONG).show();
+//        Toast.makeText(getApplicationContext(), "onLocationChanged", Toast.LENGTH_LONG).show();
 //                Log.e(TAG, String.valueOf(getDistance(lastLocation, location)*100.0));
 //        Log.e(TAG, "onStatusChanged.");
         //@note あとで住所を入力できるように
@@ -367,23 +363,12 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
     // Called when the provider status changed.
     @Override
     public void onStatusChanged(String provider, int status, Bundle extras) {
-        Toast.makeText(getApplicationContext(), "onStatusChanged.", Toast.LENGTH_LONG).show();
-        if (status == OUT_OF_SERVICE) {     //位置取得をしていたプロバイダが切り替わったら呼び出し
-            if (provider.equals(LocationManager.NETWORK_PROVIDER)){     //現在NETWORK_PROVIDERから接続していたなら
-                    mLocationManager.requestLocationUpdates(
-                    LocationManager.GPS_PROVIDER,
-                    LOCATION_UPDATE_MIN_TIME,
-                    LOCATION_UPDATE_MIN_DISTANCE,
-                    this);
-            }else{
-                mLocationManager.requestLocationUpdates(
-                LocationManager.NETWORK_PROVIDER,
+        Toast.makeText(getApplicationContext(), provider, Toast.LENGTH_LONG).show();
+        mLocationManager.requestLocationUpdates(
+                provider,
                 LOCATION_UPDATE_MIN_TIME,
                 LOCATION_UPDATE_MIN_DISTANCE,
                 this);
-
-         }
-        }
     }
 
     @Override
@@ -463,7 +448,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
             Log.e(TAG, "netOk") ;
 
         //GPSから位置情報を取得できるかどうか
-            Log.e(TAG, "gpsOk") ;
+        Log.e(TAG, "gpsOk") ;
         //requestLocation data
 
         if(mLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
@@ -473,11 +458,11 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
                     LOCATION_UPDATE_MIN_DISTANCE,
                     this);
         }else {
-                mLocationManager.requestLocationUpdates(
-                LocationManager.NETWORK_PROVIDER,
-                LOCATION_UPDATE_MIN_TIME,
-                LOCATION_UPDATE_MIN_DISTANCE,
-                this);
+            mLocationManager.requestLocationUpdates(
+                    LocationManager.NETWORK_PROVIDER,
+                    LOCATION_UPDATE_MIN_TIME,
+                    LOCATION_UPDATE_MIN_DISTANCE,
+                    this);
         }
         mMap.setMyLocationEnabled(true);  //display data on the map
 
@@ -522,11 +507,13 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
                     setMarkerListVisible(false);
                     deleteLineList(lineList);
                     markerList = new ArrayList<Marker>();   //マーカーの初期化
+                    markerHash = new HashMap<Marker, Integer>() ;
                     //items[i]の日付を持つデータをデータベースから取り出す
                     while(c.moveToNext()) {
                         if (c.getString(c.getColumnIndex("date")).equals(items[i])) {
                             Log.e(TAG, "TTTTTTT") ;
-                            String id = c.getString(c.getColumnIndex("_id"));
+//                            String id = c.getString(c.getColumnIndex("_id"));
+                            int id = c.getInt(c.getColumnIndex("_id"));
                             String lat = c.getString(c.getColumnIndex("lat"));
                             String lot = c.getString(c.getColumnIndex("lot"));
                             String posName = c.getString(c.getColumnIndex("posName"));
@@ -574,7 +561,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
             MyDialogFragment myDialogFragment = new MyDialogFragment() ;
             Bundle bunlde = new Bundle() ;
             bunlde.putString("marker", marker.getTitle()) ;
-            bunlde.putString("id", markerHash.get(marker)) ;
+            bunlde.putInt("id", markerHash.get(marker)) ;
             myDialogFragment.setArguments(bunlde);
 
             return myDialogFragment ;
@@ -611,7 +598,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
          *マーカーデータを消すことができるメソッド
          */
         private void editData(){
-            final String dataId = getArguments().getString("id") ;
+            final int dataId = getArguments().getInt("id") ;
             final Marker marker = getMarkerById(dataId);
 
 
@@ -635,7 +622,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
                     HashMap markerData = getMarkerDataById(dataId) ;
                     ContentValues values = new ContentValues();
 
-                    values.put("_id", String.valueOf(dataId)) ;
+//                    values.put("_id", String.valueOf(dataId)) ;
                     values.put("lat",valueOf(marker.getPosition().latitude));
                     values.put("lot",valueOf(marker.getPosition().longitude));
                     values.put("posName", valueOf(name));
@@ -662,7 +649,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
          *マーカーデータを消すことができるメソッド
          */
         private void deleteData(){
-            String dataId = getArguments().getString("id") ;
+            int dataId = getArguments().getInt("id") ;
             removeMarker(markerList, dataId);
         }
     }
@@ -685,15 +672,15 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
 //        return marker ;
 //    }
 
-    private static Marker getMarkerById(String id){
-        for(Map.Entry<Marker, String> entry : markerHash.entrySet()){
+    private static Marker getMarkerById(int id){
+        for(Map.Entry<Marker, Integer> entry : markerHash.entrySet()){
             if (entry.getValue() == id) {
                 return entry.getKey();
             }
         }
         return null ;
     }
-    private static HashMap getMarkerDataById(String id){
+    private static HashMap getMarkerDataById(int id){
         HashMap<String, String> markerData = new HashMap<String, String>() ;
         Cursor c = db.rawQuery("select * from posDB where _id in(\""+id+"\") ;", null) ;
 //        db.delete("posDB", "_id=\""+id+"\"", null);
