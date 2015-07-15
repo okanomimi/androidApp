@@ -1,35 +1,34 @@
 package com.example.okano56.test;
 
-import android.content.DialogInterface;
+import android.app.Activity;
 import android.content.Intent;
-import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
 
 import static com.example.okano56.test.R.id.buttonToDBSite;
 
 
-public class MainActivity extends ActionBarActivity{
+//public class MainActivity extends ActionBarActivity{
+    public class MainActivity extends Activity {
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-//        //ボタンのリスナーセット
-//        Button btn = (Button)findViewById(R.id.button);
-//        btn.setOnClickListener(clicked);   //test dada
     }
+
     public void onClick(View view){
         switch (view.getId()){
             case R.id.btnToSecond:
                 //Intent intent = new Intent(this,ActivitySecond.class);
                 Intent intent = new Intent(this,MapsActivity.class);
+                int viewWidth = view.getWidth() ;
+                intent.putExtra("viewWidth", viewWidth ) ;
                 startActivity(intent);
+
                 break;
             case buttonToDBSite:
                 Intent intent2 = new Intent(this,DBSampleA.class);
@@ -37,19 +36,6 @@ public class MainActivity extends ActionBarActivity{
                 break;
         }
     }
-//    //ボタンの処理
-//    public View.OnClickListener clicked = new View.OnClickListener() {
-//        @Override
-//        public void onClick(View v) {
-//            switch (v.getId()){
-//                case R.id.btnToSecond:
-//                    Intent intent = new Intent(this,ActivitySecond.class);
-//                    startActivity(intent);
-//                    break;
-//            }
-//            Log.v("Button", "onClick");
-//       }
-//    };
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -71,5 +57,15 @@ public class MainActivity extends ActionBarActivity{
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    /**
+     * このメソッドが呼び出されると、buttonのサイズを取得可能
+     * なので、ここでbuttonのサイズが必要なメソッドなどの実行
+      * @param hasFocus
+     */
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus){
+
     }
 }

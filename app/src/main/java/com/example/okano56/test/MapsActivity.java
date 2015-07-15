@@ -6,9 +6,11 @@ import android.app.DialogFragment;
 import android.app.Service;
 import android.content.ContentValues;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
+import android.graphics.Paint;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -18,7 +20,6 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -28,7 +29,6 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptor;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
@@ -44,9 +44,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static java.lang.String.valueOf;
-
 public class MapsActivity extends FragmentActivity implements LocationListener{
-
+    private TkyJavaLibs t  ;
     private static GoogleMap mMap; // Might be null if Google Play services APK is not available.
     private static final String TAG = MapsActivity.class.getSimpleName();
     // 更新時間(目安)
@@ -64,17 +63,20 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
     private Location lastLocation;      //直近のポジションデータ保存用
     private boolean isSave = false ;
     private static HashMap<Marker,Integer> markerHash ;   //markerにデータベースと同じidを設定できないので、これで代用
-    private int markerId ;
-    int OUT_OF_SERVICE = 0 ;
+    private int viewWidth ;
+
+    private Button saveButton ;
+    private Button outputButton ;
+    private Button deleteButton ;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-//        markerHash  = new HashMap<Marker, String>();    //データベースのマーカーIDとマーカーリストのIDとを一致させるためのハッシュ
+        t = new TkyJavaLibs() ;     //自分用のライブラリ
+        Intent intent = getIntent() ;
+        viewWidth = intent.getIntExtra("viewWidth", 0)-100 ;
         markerHash  = new HashMap<Marker,Integer>();    //データベースのマーカーIDとマーカーリストのIDとを一致させるためのハッシュ
 
-//        markerId = 0 ;
-        deleteDatabase("posDB");
         markerList = new ArrayList<Marker>();
         lineList = new ArrayList<Polyline>();
         setContentView(R.layout.activity_maps);
@@ -91,20 +93,25 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
 
 
         //「データを保存する」ボタン
-        final Button saveButton = (Button) findViewById(R.id.saveMapData);  //
+        saveButton = (Button) findViewById(R.id.saveMapData);  //
+//        saveButton.setTextSize(resizeFont(saveButton)) ;
+
+        saveButton.setTextSize(t.resizeFontInButton(saveButton, viewWidth/3)) ;
         saveButton.setOnClickListener(new OnClickListener() {
                                           @Override
                                           public void onClick(View v){
                                               if (isSave) {
                                                   isSave = false ;
                                                   Toast.makeText(getApplicationContext(), "保存終了", Toast.LENGTH_LONG).show();
-                                                  saveButton.setBackgroundColor(Color.WHITE);
-                                                  saveButton.setText("start save") ;
+//                                                  saveButton.setBackgroundColor(Color.WHITE);
+                                                  saveButton.setBackgroundDrawable(getResources().getDrawable(R.drawable.normal_button));
+                                                  saveButton.setText("start") ;
                                               }else{
                                                   isSave = true  ;
                                                   Toast.makeText(getApplicationContext(), "保存開始", Toast.LENGTH_LONG).show();
-                                                  saveButton.setBackgroundColor(Color.GRAY);
-                                                  saveButton.setText("finish save") ;
+//                                                  saveButton.setBackgroundColor(Color.GRAY);
+                                                  saveButton.setBackgroundDrawable(getResources().getDrawable(R.drawable.saving_botton));
+                                                  saveButton.setText("finish") ;
                                               }
 //                                              saveDialog();
                                           }
@@ -113,25 +120,25 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
 
 
         //マップデータを表示するボタンの実装
-        Button outputButton = (Button) findViewById(R.id.openMapData);
+        outputButton = (Button) findViewById(R.id.openMapData);
+
+//        outputButton.setTextSize(resizeFont(outputButton)) ;
+       outputButton.setTextSize(t.resizeFontInButton(outputButton, viewWidth / 3)) ;
+//        outputButton.setBackgroundColor(Color.WHITE);
         outputButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
                 DialogFragment alertDialog = new ListEachDateDialog() ;
                 alertDialog.show(getFragmentManager(), "ddd") ;
-                Cursor c = db.query("posDB",null, null, null, null, null, null);
-                str = "データベース一覧\n";
-                while(c.moveToNext()) {
-                    str += c.getString(c.getColumnIndex("_id")) + ":" +
-                            c.getString(c.getColumnIndex("lat")) + ":"+
-                            c.getString(c.getColumnIndex("lot")) + "\n";
-                }
-                Log.e(TAG, str);
             }
         });
 
         //データベースのすべてのデータを削除する
-        Button deleteButton = (Button) findViewById(R.id.deleteButton);
+        deleteButton = (Button) findViewById(R.id.deleteButton);
+//        deleteButton.setTextSize(resizeFont(deleteButton)) ;
+        deleteButton.setTextSize(t.resizeFontInButton(deleteButton, viewWidth / 3)) ;
+
+//        deleteButton.setBackgroundColor(Color.WHITE);
         deleteButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -144,48 +151,39 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         });
     }
 
-    //locationデータを保存するようのダイアログ
-    private void saveDialog(){
-        LayoutInflater inflater = (LayoutInflater)this
-                .getSystemService(LAYOUT_INFLATER_SERVICE);
-        final View layout = inflater.inflate(
-                R.layout.save_pos_data,
-                (ViewGroup) findViewById(R.id.layout_root)
-        );
 
-        //アラーとダイアログの生成
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("test");
-        builder.setView(layout);
-        builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                EditText posName = (EditText) layout.findViewById(R.id.edit_text);
-                EditText posMemo = (EditText) layout.findViewById(R.id.edit_text2);
-                String name = posName.getText().toString();
-                String memo = posMemo.getText().toString();
 
-                BitmapDescriptor icon = BitmapDescriptorFactory.fromResource(R.drawable.icon_109850);
+    /**
+     * フォントのサイズを変更する
+     *
+     * @return
+     */
+    private float resizeFont(Button btn){
+        Paint paint = new Paint();
 
-                LatLng location = new LatLng(lastLocation.getLatitude(), lastLocation.getLongitude());
+        float textSize = btn.getTextSize() ;
+        paint.setTextSize(textSize) ;
+        float textWidth = paint.measureText(btn.getText().toString()) ;
 
-                // マーカーの設定
-                MarkerOptions options = createMarkerOptions(location, name, memo, icon);
+            while ((viewWidth/3) < textWidth) {
+                // 横幅に収まるまでループ
+                Log.e(TAG, "width:"+String.valueOf(textSize)+"  btnSize:"+String.valueOf(btn.getWidth())) ;
+                if (10.0f >= textSize) {
+                    // 最小サイズ以下になる場合は最小サイズ
+                    textSize = 10.0f;
+                    break;
+                }
 
-                // マップにマーカーを追加
-                mMarker = mMap.addMarker(options);
-                markerList.add(mMarker) ;
-//                insertPosDataToDB(name, memo);   //データベースに格納
-                Toast.makeText(getApplicationContext(), "位置データを保存", Toast.LENGTH_LONG).show();
-            }
-        });
-        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
+                // テキストサイズをデクリメント
+                textSize--;
+
+                // Paintにテキストサイズ設定
+                paint.setTextSize(textSize);
+                // テキストの横幅を再取得
+                textWidth = paint.measureText(btn.getText().toString());
 
             }
-        });
-        builder.create().show();
+        return textSize ;
     }
 
     /**
@@ -213,7 +211,9 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         }
     }
 
-
+    /**
+     *
+     */
     private  static void hideInfoWindows(){
         for(int i = markerList.size() -1 ; i >= 0;i--){
             Marker marker = (Marker)markerList.get(i);
@@ -221,6 +221,12 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         }
     }
 
+    /**
+     *
+     * @param location
+     * @param location2
+     * @return
+     */
     protected double getDistance(Location location,Location location2) {
         double x = location.getLatitude() ;
         double y = location.getLongitude() ;
@@ -230,6 +236,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
 
         return distance;
     }
+
     /**
      * delete marker list content
      */
@@ -322,8 +329,6 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         Date date = new Date() ;
         DateFormat df = new SimpleDateFormat("yyyy/MM/dd") ;
         ContentValues values = new ContentValues();
-//        values.put("_id", String.valueOf(mMarker.getId())) ;
-//        values.put("_id", String.valueOf(markerId++)) ;
         values.put("lat",valueOf(location.getLatitude()));
         values.put("lot",valueOf(location.getLongitude()));
         values.put("posName", valueOf(name));
@@ -654,24 +659,12 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         }
     }
 
+
     /**
-     * 引数のIDとマーカーについてるIDが一致していれば、取得。
+     *
      * @param id
      * @return
      */
-//    private static Marker getMarkerById(String id){
-//        Marker marker = null;
-//            for(int i = markerList.size()-1 ;i >= 0 ;i--){
-//                marker =  (Marker)markerList.get(i) ;
-//                if (marker.getId().equals(id)){
-//                    marker.remove();
-//                }
-//            }
-//        if (marker == null)
-//               Log.e(TAG, "Err marker is null")  ;
-//        return marker ;
-//    }
-
     private static Marker getMarkerById(int id){
         for(Map.Entry<Marker, Integer> entry : markerHash.entrySet()){
             if (entry.getValue() == id) {
@@ -680,10 +673,16 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         }
         return null ;
     }
+
+    /**
+     *
+     * @param id
+     * @return
+     */
     private static HashMap getMarkerDataById(int id){
         HashMap<String, String> markerData = new HashMap<String, String>() ;
         Cursor c = db.rawQuery("select * from posDB where _id in(\""+id+"\") ;", null) ;
-//        db.delete("posDB", "_id=\""+id+"\"", null);
+
         c.moveToFirst() ;
         String id_1 = c.getString(c.getColumnIndex("_id"));
         String lat = c.getString(c.getColumnIndex("lat"));
@@ -691,7 +690,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         String posName = c.getString(c.getColumnIndex("posName"));
         String posMemo = c.getString(c.getColumnIndex("posMemo"));
         String date = c.getString(c.getColumnIndex("date")) ;
-        Log.e(TAG, id_1+"posName:"+posName)  ;
+
         markerData.put("_id", id_1) ;
         markerData.put("lat", lat) ;
         markerData.put("lot", lot) ;

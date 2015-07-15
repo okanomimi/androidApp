@@ -7,9 +7,8 @@
     xmlns:map="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#EDEDED"
+    android:background="#000000"
     android:orientation="vertical" >
-
 
 
     <LinearLayout
@@ -20,24 +19,30 @@
 
         <!--android:layout_width="123dp"-->
         <Button
+            android:background="@drawable/normal_button"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="start save"
+            android:text="start"
+            android:layout_gravity="center"
             android:id="@+id/saveMapData" />
 
         <Button
+            android:background="@drawable/normal_button"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="output data"
+            android:text="print"
+            android:layout_gravity="center"
             android:id="@+id/openMapData" />
 
         <Button
+            android:background="@drawable/normal_button"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="delete datas"
+            android:text="delete"
+            android:layout_gravity="center"
             android:id="@+id/deleteButton" />
 
     </LinearLayout>
