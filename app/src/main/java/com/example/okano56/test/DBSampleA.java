@@ -20,7 +20,7 @@ public class DBSampleA extends Activity implements View.OnClickListener{
     private Button btn;
     private EditText edittext;
     private TextView textview;
-    private LocationDBHelper myhelper;
+    private MyDBHelper myhelper;
     private String str;
     private static SQLiteDatabase db;
 
@@ -41,7 +41,7 @@ public class DBSampleA extends Activity implements View.OnClickListener{
         textview = (TextView)findViewById(R.id.MyTextView);
 
         //データベースヘルパーの生成
-        myhelper = new LocationDBHelper(this);
+        myhelper = new MyDBHelper(this);
         db = myhelper.getWritableDatabase();
 
         //データベーステーブルクリア

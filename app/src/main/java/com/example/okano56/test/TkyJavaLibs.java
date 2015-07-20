@@ -1,8 +1,10 @@
 package com.example.okano56.test;
 
+import android.content.Context;
 import android.graphics.Paint;
 import android.util.Log;
 import android.widget.Button;
+import android.widget.Toast;
 
 /**
  * Created by okano56 on 2015/06/07.
@@ -10,9 +12,20 @@ import android.widget.Button;
  */
 public class TkyJavaLibs {
 
+    Context context ;
+
+    //コンストラクタ
+    public TkyJavaLibs(Context context){
+        this.context = context ;
+    }
+
+    //コンストラクタ
+    public TkyJavaLibs(){
+        context = null ;
+    }
+
     //log表示用
-    public void log(String logdata){
-        Log.e("debug", logdata)  ;
+    public void log(String logdata){Log.e("debug", logdata)  ;
     }
 
     //文字列に変換用
@@ -20,6 +33,10 @@ public class TkyJavaLibs {
        return String.valueOf(data)  ;
     }
 
+    //
+    public void toast(String text) {
+        Toast.makeText(context, text, Toast.LENGTH_LONG).show();
+    }
 
     /**
      * 文字列をandroidの端末毎に調整する
