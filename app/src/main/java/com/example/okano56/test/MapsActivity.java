@@ -25,12 +25,14 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptor;
-import com.google.android.gms.maps.model.CameraPosition;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
@@ -65,6 +67,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
     private static HashMap<Marker,Integer> markerHash ;   //markerにデータベースと同じidを設定できないので、これで代用
     private int viewWidth ;
 
+    private ArrayList<Long> oneTimeSaivingIdList  ;      //一度saveボタンを押して保存するモードに入ってる時
     private Button saveButton ;
     private Button outputButton ;
     private Button deleteButton ;
@@ -76,13 +79,14 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         Intent intent = getIntent() ;
         viewWidth = intent.getIntExtra("viewWidth", 0)-100 ;        //@note 修正必要　ここでは、画面のサイズを取得
         markerHash  = new HashMap<Marker,Integer>();    //データベースのマーカーIDとマーカーリストのIDとを一致させるためのハッシュ
-        //deleteDatabase("posDB") ;
+//        deleteDatabase("posDB") ;
         markerList = new ArrayList<Marker>();
         lineList = new ArrayList<Polyline>();
         setContentView(R.layout.activity_maps);
         myDBHelper = new MyDBHelper(this);
         db = myDBHelper.getWritableDatabase();
 
+        oneTimeSaivingIdList = new ArrayList<Long>() ;
         mLocationManager = (LocationManager)this.getSystemService(Service.LOCATION_SERVICE);  //位置データを取る用
         mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
         setUpMapIfNeeded();
@@ -104,15 +108,18 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
                                                   Toast.makeText(getApplicationContext(), "保存終了", Toast.LENGTH_LONG).show();
 //                                                  saveButton.setBackgroundColor(Color.WHITE);
                                                   saveButton.setBackgroundDrawable(getResources().getDrawable(R.drawable.normal_button));
+
+                                                  saveOneTimeSave() ;
                                                   saveButton.setText("start") ;
                                               }else{
                                                   isSave = true  ;
+                                                  oneTimeSaivingIdList = new ArrayList<Long>() ;
                                                   Toast.makeText(getApplicationContext(), "保存開始", Toast.LENGTH_LONG).show();
 //                                                  saveButton.setBackgroundColor(Color.GRAY);
                                                   saveButton.setBackgroundDrawable(getResources().getDrawable(R.drawable.saving_botton));
+                                                  //現在までで保存しているマーカーを保存してく
                                                   saveButton.setText("finish") ;
                                               }
-//                                              saveDialog();
                                           }
                                       }
         );
@@ -191,7 +198,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
      * @param location2
      * @return
      */
-    protected double getDistance(Location location,Location location2) {
+    protected static double getDistance(Location location,Location location2) {
         double x = location.getLatitude() ;
         double y = location.getLongitude() ;
         double x2 = location2.getLatitude() ;
@@ -201,6 +208,21 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         return distance;
     }
 
+    /**
+     *
+     * @param location
+     * @param location2
+     * @return
+     */
+    protected static double getDistance(LatLng location,LatLng location2) {
+        double x = location.latitude ;
+        double y = location.longitude ;
+        double x2 = location2.latitude ;
+        double y2 = location2.longitude ;
+        double distance =  Math.sqrt((x2 - x) * (x2 - x) + (y2 - y) * (y2 - y));
+
+        return distance;
+    }
     /**
      * delete marker list content
      */
@@ -233,19 +255,26 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         LatLng from = null ;
         LatLng to = null ;
         for(Marker marker: markerList){
-            if (markerNum == 0){
+            if (markerNum == 0){    //スタート地点のマーカーなら
                 from = marker.getPosition()  ;
+//                marker.setIcon(BitmapDescriptorFactory.defaultMarker(100)) ; // スタート地点
+                marker.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE)) ; // スタート地点
+                marker.setVisible(true);
             }else{
                 to = marker.getPosition() ;
                 Polyline line = mMap.addPolyline(new PolylineOptions()
                                 .add(from, to)
                                 .width(3)
-                                .color(Color.YELLOW)
+                                .color(Color.RED)
                 ) ;
                 lineList.add(line) ;
                 from = to ;
             }
             markerNum++ ;
+            if (markerNum == markerList.size()){       //最後マーカなら
+              marker.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW)) ; // スタート地点
+              marker.setVisible(true);
+            }
         }
     }
 
@@ -275,13 +304,71 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         MarkerOptions options = new MarkerOptions();
         options.position(location);
         options.title(name);
-        if (icon == null) {
+        if (icon != null) {
             options.icon(icon);
         }
         options.snippet(memo);
         options.visible(false) ;    //この段階では非表示
 
         return options ;
+    }
+
+    /**
+     * saveボタンからfinishまでのデータにタイトルをつける
+     */
+    private void saveOneTimeSave(){
+       //dialog表示、タイトルを表示
+        // カスタムビューを設定
+
+        LayoutInflater inflater = this.getLayoutInflater() ;
+            final View layout = inflater.inflate(  R.layout.save_pos_data,null);
+       AlertDialog.Builder inputTitle = new AlertDialog.Builder(this)  ;
+       inputTitle.setTitle("タイトル入力") ;
+        inputTitle.setView(layout) ;
+        inputTitle.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+                // OK ボタンクリック処理
+                // ID と PASSWORD を取得
+                EditText id
+                        = (EditText) layout.findViewById(R.id.edit_text);
+                EditText pass
+                        = (EditText) layout.findViewById(R.id.edit_text2);
+                String title = id.getText().toString();
+
+                //ここで全部処理すべし。
+                for(Long oneTimeId: oneTimeSaivingIdList) {
+                    Cursor c = db.rawQuery("select * from posDB where _id in(\"" + t.to_s(oneTimeId) + "\") ;", null);
+                    c.moveToFirst() ;
+                    ContentValues values = new ContentValues() ;
+
+                    String id_1 = c.getString(c.getColumnIndex("_id"));
+                    String lat = c.getString(c.getColumnIndex("lat"));
+                    String lot = c.getString(c.getColumnIndex("lot"));
+                    String name = c.getString(c.getColumnIndex("posName"));
+                    String memo = c.getString(c.getColumnIndex("posMemo"));
+                    String date = c.getString(c.getColumnIndex("date")) ;
+
+                    values.put("lat",valueOf(lat));
+                    values.put("lot",valueOf(valueOf(lot)));
+                    values.put("posName", valueOf(name));
+                    values.put("posMemo", valueOf(memo));
+                    values.put("date", valueOf(date));
+                    values.put("title", valueOf(title)+":"+valueOf(date));
+//                    values.put("title", valueOf(title));
+
+                    db.update("posDB", values, "_id=\"" + String.valueOf(oneTimeId) + "\"", null);
+                }
+            }
+        });
+        inputTitle.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+                // Cancel ボタンクリック処理
+            }
+        });
+
+        // 表示
+        inputTitle.create().show();
+       //入力されたタイトルをデータに保存していく
     }
 
     /**
@@ -298,7 +385,8 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         values.put("posName", valueOf(name));
         values.put("posMemo", valueOf(memo));
         values.put("date", valueOf(df.format(date)));
-        db.insert("posDB", null, values);
+        values.put("title", valueOf(df.format(date)));
+        oneTimeSaivingIdList.add(db.insert("posDB", null, values));     //idを保存していく
 
         //日付とタイトルデータを入れる。ここではタイトルは日付と同じにする
         //その日付データが存在していなければ、以下を実行する
@@ -337,7 +425,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
 //                Log.e(TAG, String.valueOf(getDistance(lastLocation, location)*100.0));
                 //@note あとで住所を入力できるように
                 if (getDistance(lastLocation, location)*100.0 > 0.3) {  //座標のズレが誤差以上であれば保存
-                    insertPosDataToDB(location, "test", "test");
+                    insertPosDataToDB(location, "empty", "");
                     lastLocation = location;       //直近のロケーションデータを更新
                     t.toast("位置情報の保存");
                 }
@@ -384,15 +472,59 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         textView.setText("NetworkEnabled : " + valueOf(isNetworkEnabled));
     }
 
+    //マーカーリストの中で始点と始点から最も遠いマーカーとの距離を返す
+    private static float getMaxLengthBetweenFirstMarker(ArrayList markerList){
+        Marker firstMarker =(Marker)(markerList.get(0)) ;
+        LatLng firstMarkerPos = firstMarker.getPosition() ;
+        float maxLength = 0 ;
+
+        for(Object marker: markerList){
+            if (getDistance(((Marker)marker).getPosition(), firstMarkerPos) > maxLength) {
+                maxLength = (float)getDistance(((Marker) marker).getPosition(), firstMarkerPos);
+            }
+        }
+        return maxLength ;
+
+    }
+
+
+    //マーカーリストの中で始点と始点から最も遠いマーカーとの距離を返す
+    private static LatLng getFarthestMarkerFromFirstMarker(ArrayList markerList){
+        Marker firstMarker =(Marker)(markerList.get(0)) ;
+        LatLng firstMarkerPos = firstMarker.getPosition() ;
+        Double maxLength = 0.0 ;
+        LatLng farthestMarker = null ;
+
+        for(Object marker: markerList){
+            if (getDistance(((Marker)marker).getPosition(), firstMarkerPos) > maxLength) {
+                maxLength = getDistance(((Marker) marker).getPosition(), firstMarkerPos);
+                farthestMarker =((Marker) marker).getPosition() ;
+            }
+        }
+        return farthestMarker;
+
+    }
     /**
      * カメラのポジションを指定したマーカーの場所にする
-     * @param marker
+     * @param
      */
-    private static void cameraPosToMarker(Marker marker){
-        CameraPosition sydney = new CameraPosition.Builder()
-                .target(marker.getPosition()).zoom(15.5f)
-                .bearing(0).tilt(25).build();
-        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(sydney));
+    private static void moveCameraPos(ArrayList markerList){
+//        float maxLength = getMaxLengthBetweenFirstMarker(markerList);
+        LatLng firstMarkerLatLng = ((Marker)markerList.get(0)).getPosition() ;
+//        t.log(t.to_s(maxLength));
+//        LatLngBounds.Builder latLngBound = new LatLngBounds(firstMarkerLatLng, getFarthestMarkerFromFirstMarker(markerList)) ;
+        LatLngBounds.Builder latLngBound = new LatLngBounds.Builder() ;
+        for(Object marker: markerList) {
+            latLngBound.include(((Marker) marker).getPosition())  ;
+        }
+        CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(latLngBound.build(), 70);
+        mMap.moveCamera(cu) ;
+//        latLngBound.including(getFarthestMarkerFromFirstMarker(markerList)) ;
+//        Marker firstMarker = (Marker)markerList.get(0) ;
+//        CameraPosition sydney = new CameraPosition.Builder()
+//                .target(firstMarker.getPosition()).zoom(maxLength)
+//                .bearing(0).tilt(25).build();
+//        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(sydney));
     }
     /**
      * Sets up the map if it is possible to do so (i.e., the Google Play services APK is correctly
@@ -468,6 +600,32 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
                 alertDlg.show(getFragmentManager(), "test");
             }
         });
+
+        //マップをタッチした時の処理
+        mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
+            @Override
+            public void onMapClick(LatLng latLng) {
+                setMarkerListVisible(false);
+                if (markerList.size() > 0){     //現在マーカーが表示されていれば
+                   //リストの中のマーカーとクリックされたところの近いところを表示していく
+                    for(Object m: markerList){
+                       LatLng mLatLng = ((Marker)m).getPosition() ;
+                       if (getDistance(mLatLng, latLng) < 0.001){
+                            t.log(t.to_s(getDistance(mLatLng, latLng))) ;
+                            ((Marker) m).setVisible(true);
+                            for (Object mm: markerList){
+                               Marker marker = ((Marker)mm) ;
+                               if (!marker.getTitle().equals("empty")) {
+                                   marker.setIcon(BitmapDescriptorFactory.defaultMarker(200)) ; // マーカーの色変更
+                                   marker.setVisible(true);
+                               }
+                            }
+
+                       }
+                    }
+                }
+            }
+        });
     }
 
     /**
@@ -477,11 +635,11 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         String dbDate;  //クリックされた日付を保存しとくよう
         @Override
         public Dialog onCreateDialog(Bundle savedInstanceState){
-//            Cursor c = db.query("posDB",null, null, null, null, null, null);
-            Cursor c = db.query("titleDB",null, null, null, null, null, null);
+            Cursor c = db.query("posDB",null, null, null, null, null, null);
+//            Cursor c = db.query("titleDB",null, null, null, null, null, null);
 
             final CharSequence[] items = createItem(c) ;
-            final HashMap<CharSequence, String> itemsHash = createItemHash(c) ;
+//            final HashMap<CharSequence, String> itemsHash = createItemHash(c) ;
 
             AlertDialog.Builder builder = new AlertDialog.Builder(getActivity()) ;
             builder.setItems(items, new DialogInterface.OnClickListener() {
@@ -493,30 +651,40 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
                     deleteLineList(lineList);
                     markerList = new ArrayList<Marker>();   //マーカーの初期化
                     markerHash = new HashMap<Marker, Integer>() ;
-                    String dateData = itemsHash.get(items[i]) ;
+//                    String dateData = itemsHash.get(items[i]) ;
                     //items[i]の日付を持つデータをデータベースから取り出す
                     while(c.moveToNext()) {
-//                        if (c.getString(c.getColumnIndex("date")).equals(items[i])) {
-                            if (c.getString(c.getColumnIndex("date")).equals(dateData)) {
+                        if (c.getString(c.getColumnIndex("title")).equals(items[i])) {
+//                            if (c.getString(c.getColumnIndex("date")).equals(dateData)) {
                             int id = c.getInt(c.getColumnIndex("_id"));
                             String lat = c.getString(c.getColumnIndex("lat"));
                             String lot = c.getString(c.getColumnIndex("lot"));
                             String posName = c.getString(c.getColumnIndex("posName"));
+
                             String posMemo = c.getString(c.getColumnIndex("posMemo"));
                             LatLng location = new LatLng(Float.valueOf(lat).floatValue(), Float.valueOf(lot).floatValue());
-                            MarkerOptions options = createMarkerOptions(location, posName, posMemo, null);
-                            t.log("id "+t.to_s(id)) ;
+                            BitmapDescriptor icon = null ;
+                            if (!posName.equals("empty")) {   //タイトルが入力されていれば
+//                                icon = BitmapDescriptorFactory.fromResource(R.drawable.icon_109850);
+                                icon = BitmapDescriptorFactory.defaultMarker(200) ;
+                            }
+                            MarkerOptions options = createMarkerOptions(location, posName, posMemo, icon);
+
                             mMarker = mMap.addMarker(options);
+                            //もしタイトルが入力されていれば、マーカーを表示する
+                            if (!posName.equals("empty")){
+                                mMarker.setVisible(true);
+                            }else{
+                                mMarker.setVisible(false) ;
+                            }
                             markerList.add(mMarker) ;
                             markerHash.put(mMarker, id) ;
 //                                setMarkerVisible(true, id);
                         }
                     }
                     drawLines(markerList) ;
-                    setMarkerListVisible(true);
-
-                    Marker firstMarker = (Marker) markerList.get(0);
-                    cameraPosToMarker(firstMarker) ;
+//                    setMarkerListVisible(false);
+                    moveCameraPos(markerList) ;
 
                 }
             }) ;
@@ -546,7 +714,9 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
             ArrayList<CharSequence> titleList = new ArrayList<CharSequence>() ;
 
             while(c.moveToNext()) {
-                    titleList.add(c.getString(c.getColumnIndex("title"))) ;
+                    if (!titleList.contains(c.getString(c.getColumnIndex("title")))) {
+                        titleList.add(c.getString(c.getColumnIndex("title")));
+                    }
             }
 
             final CharSequence[] items = new CharSequence[titleList.size()] ;
@@ -618,6 +788,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
                             break;
 
                     }
+                    drawLines(markerList);  //ラインを書き直す
                 }
             }) ;
             return builder.create() ;

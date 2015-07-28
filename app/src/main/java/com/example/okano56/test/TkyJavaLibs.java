@@ -33,6 +33,16 @@ public class TkyJavaLibs {
        return String.valueOf(data)  ;
     }
 
+    //文字列に変換用
+    public String to_s(float data){
+       return String.valueOf(data)  ;
+    }
+
+    //文字列に変換用
+    public String to_s(double data){
+       return String.valueOf(data)  ;
+    }
+
     //
     public void toast(String text) {
         Toast.makeText(context, text, Toast.LENGTH_LONG).show();
