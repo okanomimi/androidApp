@@ -10,6 +10,7 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
+import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -31,6 +32,9 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.CameraPosition;
+import com.google.android.gms.maps.model.Circle;
+import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
@@ -61,13 +65,15 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
     private String str;
     private static Marker mMarker;
     public static ArrayList markerList;
-    public static ArrayList lineList;
+    public static ArrayList lineList;       //地点と地点を結ぶ
     private Location lastLocation;      //直近のポジションデータ保存用
     private boolean isSave = false ;
     private static HashMap<Marker,Integer> markerHash ;   //markerにデータベースと同じidを設定できないので、これで代用
     private int viewWidth ;
 
     private ArrayList<Long> oneTimeSaivingIdList  ;      //一度saveボタンを押して保存するモードに入ってる時
+    private ArrayList<Circle> circleList  ;      //一度saveボタンを押して保存するモードに入ってる時
+    private static ArrayList<Circle> tempCircleList  ;      //一度saveボタンを押して保存するモードに入ってる時
     private Button saveButton ;
     private Button outputButton ;
     private Button deleteButton ;
@@ -87,14 +93,18 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         db = myDBHelper.getWritableDatabase();
 
         oneTimeSaivingIdList = new ArrayList<Long>() ;
+        circleList = new ArrayList<Circle>() ;
         mLocationManager = (LocationManager)this.getSystemService(Service.LOCATION_SERVICE);  //位置データを取る用
         mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
-        setUpMapIfNeeded();
+        
+        setUpMapIfNeeded();     //google mapの設定
+      
 
+        //保存されているデータを点表示する
+                printCircles()  ;
         //直近に取得したGPSデータを取得する。
         Location location = mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
         lastLocation = location ;
-
 
         //「データを保存する」ボタン
         saveButton = (Button) findViewById(R.id.saveMapData);  //
@@ -108,7 +118,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
                                                   Toast.makeText(getApplicationContext(), "保存終了", Toast.LENGTH_LONG).show();
 //                                                  saveButton.setBackgroundColor(Color.WHITE);
                                                   saveButton.setBackgroundDrawable(getResources().getDrawable(R.drawable.normal_button));
-
+                                                  lastLocation = null ;
                                                   saveOneTimeSave() ;
                                                   saveButton.setText("start") ;
                                               }else{
@@ -129,11 +139,12 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         outputButton = (Button) findViewById(R.id.openMapData);
 
 //        outputButton.setTextSize(resizeFont(outputButton)) ;
-       outputButton.setTextSize(t.resizeFontInButton(outputButton, viewWidth / 3)) ;
+        outputButton.setTextSize(t.resizeFontInButton(outputButton, viewWidth / 3)) ;
 //        outputButton.setBackgroundColor(Color.WHITE);
         outputButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
+
                 DialogFragment alertDialog = new ListEachDateDialog() ;
                 alertDialog.show(getFragmentManager(), "ddd") ;
             }
@@ -155,6 +166,43 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
                 Toast.makeText(getApplicationContext(), str, Toast.LENGTH_LONG).show();
             }
         });
+    }
+
+    /**
+     *  データベースに保存してある地点をサークル表示する
+     */
+    private void printCircles() {
+        Cursor c = db.query("posDB",null, null, null, null, null, null);
+        circleList = new ArrayList<Circle>();   //マーカーの初期化
+        //items[i]の日付を持つデータをデータベースから取り出す
+        c.moveToFirst() ;
+        while(c.moveToNext()) {
+
+            int id = c.getInt(c.getColumnIndex("_id"));
+            String lat = c.getString(c.getColumnIndex("lat"));
+            String lot = c.getString(c.getColumnIndex("lot"));
+            LatLng location = new LatLng(Float.valueOf(lat).floatValue(), Float.valueOf(lot).floatValue());
+            Circle circle =  mMap.addCircle(new CircleOptions()
+                                .center(location)
+                                .radius(2.0)
+                                .fillColor(Color.RED)
+                                .strokeColor(Color.RED)
+                ) ;
+            circleList.add(circle) ;
+        }
+
+    }
+
+    /**
+     * 表示してあるサークルを消す
+     */
+    private static void deleteCircles(ArrayList<Circle> circleList){
+        if (circleList == null)
+            return;
+
+        for(Circle circle: circleList){
+            circle.remove();
+        }
     }
 
     /**
@@ -251,15 +299,26 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
      */
     private static void drawLines(ArrayList<Marker> markerList){
         int markerNum = 0 ;
+        deleteCircles(tempCircleList) ;
+        tempCircleList = new ArrayList<Circle>() ;
         lineList = new ArrayList<Polyline>() ;
+
         LatLng from = null ;
         LatLng to = null ;
         for(Marker marker: markerList){
             if (markerNum == 0){    //スタート地点のマーカーなら
                 from = marker.getPosition()  ;
 //                marker.setIcon(BitmapDescriptorFactory.defaultMarker(100)) ; // スタート地点
-                marker.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE)) ; // スタート地点
-                marker.setVisible(true);
+//                marker.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE)) ; // スタート地点
+//                marker.setVisible(true);
+
+                Circle circle = mMap.addCircle(new CircleOptions()
+                                .center(marker.getPosition())
+                                .radius(4.0)
+                                .fillColor(Color.YELLOW)
+                                .strokeColor(Color.YELLOW)
+                ) ;
+                tempCircleList.add(circle) ;
             }else{
                 to = marker.getPosition() ;
                 Polyline line = mMap.addPolyline(new PolylineOptions()
@@ -267,13 +326,27 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
                                 .width(3)
                                 .color(Color.RED)
                 ) ;
+                Circle circle =  mMap.addCircle(new CircleOptions()
+                                .center(marker.getPosition())
+                                .radius(4.0)
+                                .fillColor(Color.BLUE)
+                                .strokeColor(Color.BLUE)
+                ) ;
+                tempCircleList.add(circle) ;
                 lineList.add(line) ;
                 from = to ;
             }
             markerNum++ ;
             if (markerNum == markerList.size()){       //最後マーカなら
-              marker.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW)) ; // スタート地点
-              marker.setVisible(true);
+                Circle circle = mMap.addCircle(new CircleOptions()
+                                .center(marker.getPosition())
+                                .radius(4.0)
+                                .fillColor(Color.GREEN)
+                                .strokeColor(Color.GREEN)
+                ) ;
+                tempCircleList.add(circle) ;
+//              marker.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW)) ; // スタート地点
+//              marker.setVisible(true);
             }
         }
     }
@@ -317,13 +390,13 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
      * saveボタンからfinishまでのデータにタイトルをつける
      */
     private void saveOneTimeSave(){
-       //dialog表示、タイトルを表示
+        //dialog表示、タイトルを表示
         // カスタムビューを設定
 
         LayoutInflater inflater = this.getLayoutInflater() ;
-            final View layout = inflater.inflate(  R.layout.save_pos_data,null);
-       AlertDialog.Builder inputTitle = new AlertDialog.Builder(this)  ;
-       inputTitle.setTitle("タイトル入力") ;
+        final View layout = inflater.inflate(  R.layout.save_pos_data,null);
+        AlertDialog.Builder inputTitle = new AlertDialog.Builder(this)  ;
+        inputTitle.setTitle("タイトル入力") ;
         inputTitle.setView(layout) ;
         inputTitle.setPositiveButton("OK", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int which) {
@@ -368,7 +441,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
 
         // 表示
         inputTitle.create().show();
-       //入力されたタイトルをデータに保存していく
+        //入力されたタイトルをデータに保存していく
     }
 
     /**
@@ -424,14 +497,14 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
             if (lastLocation != null) {
 //                Log.e(TAG, String.valueOf(getDistance(lastLocation, location)*100.0));
                 //@note あとで住所を入力できるように
-                if (getDistance(lastLocation, location)*100.0 > 0.3) {  //座標のズレが誤差以上であれば保存
+                if (getDistance(lastLocation, location)*100.0 > 0.2) {  //座標のズレが誤差以上であれば保存
                     insertPosDataToDB(location, "empty", "");
                     lastLocation = location;       //直近のロケーションデータを更新
                     t.toast("位置情報の保存");
                 }
             }else {
                 lastLocation = location;       //直近のロケーションデータを更新
-                insertPosDataToDB(location, "test", "test");
+                insertPosDataToDB(location, "empty", "");
             }
         }
     }
@@ -440,11 +513,11 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
     @Override
     public void onStatusChanged(String provider, int status, Bundle extras) {
         Toast.makeText(getApplicationContext(), provider, Toast.LENGTH_LONG).show();
-//        mLocationManager.requestLocationUpdates(
-//                provider,
-//                LOCATION_UPDATE_MIN_TIME,
-//                LOCATION_UPDATE_MIN_DISTANCE,
-//                this);
+        mLocationManager.requestLocationUpdates(
+                provider,
+                LOCATION_UPDATE_MIN_TIME,
+                LOCATION_UPDATE_MIN_DISTANCE,
+                this);
     }
 
     @Override
@@ -562,21 +635,29 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
      * This should only be called once and when we are sure that {@link #mMap} is not null.
      */
     private void setUpMap() {
+
+        Criteria criteria = new Criteria() ;
+
+//        criteria.setAccuracy(Criteria.ACCURACY_LOW) ;//精度の指定
+//        criteria.setAccuracy(Criteria.NO_REQUIREMENT) ;//精度の指定
+        criteria.setAccuracy(Criteria.ACCURACY_FINE) ;//精度の指定
+//        criteria.setPowerRequirement(Criteria.POWER_LOW); //消費電力の設定
+        String provider = mLocationManager.getBestProvider(criteria, true) ;
+
+        // 取得したロケーションプロバイダを表示
+        t.toast("Provider: " + provider);
         //3Gやwifiから位置情報を取得できるかどうか
-        if(mLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-            mLocationManager.requestLocationUpdates(
-                    LocationManager.GPS_PROVIDER,
-                    LOCATION_UPDATE_MIN_TIME,
-                    LOCATION_UPDATE_MIN_DISTANCE,
-                    this);
-        }
-//        else {
-//            mLocationManager.requestLocationUpdates(
-//                    LocationManager.NETWORK_PROVIDER,
-//                    LOCATION_UPDATE_MIN_TIME,
-//                    LOCATION_UPDATE_MIN_DISTANCE,
-//                    this);
-//        }
+        mLocationManager.requestLocationUpdates(
+//                    LocationManager.GPS_PROVIDER,
+                provider,
+                LOCATION_UPDATE_MIN_TIME,
+                LOCATION_UPDATE_MIN_DISTANCE,
+                this);
+
+        final CameraPosition pos = new CameraPosition(new LatLng(35.7189, 139.7539),7, 0, 0) ;
+        CameraUpdate camera = CameraUpdateFactory.newCameraPosition(pos) ;
+        mMap.moveCamera(camera);
+
         mMap.setMyLocationEnabled(true);  //display data on the map
 
         //マーカーをクリックした時の処理
@@ -607,21 +688,21 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
             public void onMapClick(LatLng latLng) {
                 setMarkerListVisible(false);
                 if (markerList.size() > 0){     //現在マーカーが表示されていれば
-                   //リストの中のマーカーとクリックされたところの近いところを表示していく
+                    //リストの中のマーカーとクリックされたところの近いところを表示していく
                     for(Object m: markerList){
-                       LatLng mLatLng = ((Marker)m).getPosition() ;
-                       if (getDistance(mLatLng, latLng) < 0.001){
+                        LatLng mLatLng = ((Marker)m).getPosition() ;
+                        if (getDistance(mLatLng, latLng) < 0.001){
                             t.log(t.to_s(getDistance(mLatLng, latLng))) ;
                             ((Marker) m).setVisible(true);
                             for (Object mm: markerList){
-                               Marker marker = ((Marker)mm) ;
-                               if (!marker.getTitle().equals("empty")) {
-                                   marker.setIcon(BitmapDescriptorFactory.defaultMarker(200)) ; // マーカーの色変更
-                                   marker.setVisible(true);
-                               }
+                                Marker marker = ((Marker)mm) ;
+                                if (!marker.getTitle().equals("empty")) {
+                                    marker.setIcon(BitmapDescriptorFactory.defaultMarker(200)) ; // マーカーの色変更
+                                    marker.setVisible(true);
+                                }
                             }
 
-                       }
+                        }
                     }
                 }
             }
@@ -644,7 +725,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
             AlertDialog.Builder builder = new AlertDialog.Builder(getActivity()) ;
             builder.setItems(items, new DialogInterface.OnClickListener() {
                 Cursor c = db.query("posDB",null, null, null, null, null, null);
-//                Cursor c = db.query("titleDB",null, null, null, null, null, null);
+                //                Cursor c = db.query("titleDB",null, null, null, null, null, null);
                 @Override
                 public void onClick(DialogInterface dialogInterface, int i) {
                     setMarkerListVisible(false);
@@ -714,9 +795,9 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
             ArrayList<CharSequence> titleList = new ArrayList<CharSequence>() ;
 
             while(c.moveToNext()) {
-                    if (!titleList.contains(c.getString(c.getColumnIndex("title")))) {
-                        titleList.add(c.getString(c.getColumnIndex("title")));
-                    }
+                if (!titleList.contains(c.getString(c.getColumnIndex("title")))) {
+                    titleList.add(c.getString(c.getColumnIndex("title")));
+                }
             }
 
             final CharSequence[] items = new CharSequence[titleList.size()] ;
@@ -737,8 +818,8 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
             dateList.add(c.getString(c.getColumnIndex("date"))) ;
             titleList.add(c.getString(c.getColumnIndex("title"))) ;
             while(c.moveToNext()) {
-                    dateList.add(c.getString(c.getColumnIndex("date"))) ;
-                    titleList.add(c.getString(c.getColumnIndex("title"))) ;
+                dateList.add(c.getString(c.getColumnIndex("date"))) ;
+                titleList.add(c.getString(c.getColumnIndex("title"))) ;
             }
 
             final CharSequence[] items = new CharSequence[dateList.size()] ;
@@ -921,7 +1002,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
     public static class TitleDialog extends DialogFragment{
 
         public static TitleDialog newInstance(String date){
-           TitleDialog  myDialogFragment = new TitleDialog() ;
+            TitleDialog  myDialogFragment = new TitleDialog() ;
             Bundle bundle= new Bundle() ;
             bundle.putString("date", date) ;
             myDialogFragment.setArguments(bundle);
