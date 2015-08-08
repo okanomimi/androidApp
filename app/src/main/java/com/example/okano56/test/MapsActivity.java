@@ -104,10 +104,10 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         circleList = new ArrayList<Circle>() ;
         mLocationManager = (LocationManager)this.getSystemService(Service.LOCATION_SERVICE);  //位置データを取る用
         mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
-        
+
         setUpMapIfNeeded();     //google mapの設定
-      
-        printCircles() ;    //保存されているデータを点表示する
+
+//        printCircles() ;    //保存されているデータを点表示する
 
         //直近に取得したGPSデータを取得する。
         Location location = mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
@@ -150,18 +150,18 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         });
 
         //データベースのすべてのデータを削除する
-        deleteButton = (Button) findViewById(R.id.deleteButton);
-        deleteButton.setTextSize(t.resizeFontInButton(deleteButton, viewWidth / ButtonNum)) ;
-        deleteButton.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                deleteAllPosDatabase();   //delete posDB's data
-                deleteMarkerList();   //delete markers
-                deleteLineList(lineList);
-                message = "データベースを削除しました";
-                t.toast(message);
-            }
-        });
+//        deleteButton = (Button) findViewById(R.id.deleteButton);
+//        deleteButton.setTextSize(t.resizeFontInButton(deleteButton, viewWidth / ButtonNum)) ;
+//        deleteButton.setOnClickListener(new OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                deleteAllPosDatabase();   //delete posDB's data
+//                deleteMarkerList();   //delete markers
+//                deleteLineList(lineList);
+//                message = "データベースを削除しました";
+//                t.toast(message);
+//            }
+//        });
     }
 
     /**
@@ -177,11 +177,11 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
             String lot = c.getString(c.getColumnIndex("lot"));
             LatLng location = new LatLng(Float.valueOf(lat).floatValue(), Float.valueOf(lot).floatValue());
             Circle circle = mMap.addCircle(new CircleOptions()
-                                .center(location)
-                                .radius(1.0)
-                                .fillColor(Color.BLACK)
-                                .strokeColor(Color.BLACK)
-                ) ;
+                            .center(location)
+                            .radius(1.0)
+                            .fillColor(Color.BLACK)
+                            .strokeColor(Color.BLACK)
+            ) ;
             circleList.add(circle) ;
         }
     }
@@ -200,6 +200,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
             );
         }
     }
+
     /**
      * 表示してあるサークルを削除するメソッド
      * @param circleList 消したいサークルリスト
@@ -275,10 +276,36 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         double x2 = location2.latitude ;
         double y2 = location2.longitude ;
         double distance =  Math.sqrt((x2 - x) * (x2 - x) + (y2 - y) * (y2 - y));
+//        double distance = SphericalUtil.co
 
         return distance;
     }
 
+   /**
+     * ２つの地点のユークリッド距離を返す
+     * 公式APIを使用したバージョン
+     * @param location
+     * @param location2
+     * @return
+     */
+    protected static void getDistance(LatLng location,LatLng location2, float[] results) {
+        Location.distanceBetween(location.latitude,
+                location.longitude, location2.latitude, location2.longitude, results);
+
+    }
+
+    /**
+     * ２つの地点のユークリッド距離を返す
+     * 公式APIを使用したバージョン
+     * @param location
+     * @param location2
+     * @return
+     */
+    protected static void getDistance(Location location,Location location2, float[] results) {
+        Location.distanceBetween(location.getLatitude(),
+                location.getLongitude(), location2.getLatitude(), location2.getLongitude(), results);
+
+    }
     /**
      * delete marker list content
      */
@@ -313,45 +340,45 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
 
         LatLng from = null ;
         LatLng to = null ;
+        Circle circle = null ;
         for(Marker marker: markerList){
             if (markerNum == 0){    //スタート地点のマーカーなら
                 from = marker.getPosition()  ;
-
-                Circle circle = mMap.addCircle(new CircleOptions()
-                                .center(marker.getPosition())
-                                .radius(1.0)
-                                .fillColor(Color.YELLOW)
-                                .strokeColor(Color.YELLOW)
-                ) ;
-                tempCircleList.add(circle) ;
+                circle = createCircle(marker.getPosition(), 4.0, Color.YELLOW) ;
             }else{
                 to = marker.getPosition() ;
                 Polyline line = mMap.addPolyline(new PolylineOptions()
                                 .add(from, to)
-                                .width(3)
-                                .color(Color.RED)
+                                .width(4)
+                                .color(Color.GREEN)
                 ) ;
-                Circle circle =  mMap.addCircle(new CircleOptions()
-                                .center(marker.getPosition())
-                                .radius(1.0)
-                                .fillColor(Color.BLUE)
-                                .strokeColor(Color.BLUE)
-                ) ;
-                tempCircleList.add(circle) ;
+                circle = createCircle(marker.getPosition(), 4.0, Color.BLUE) ;
                 lineList.add(line) ;
                 from = to ;
             }
             markerNum++ ;
             if (markerNum == markerList.size()){       //最後マーカなら
-                Circle circle = mMap.addCircle(new CircleOptions()
-                                .center(marker.getPosition())
-                                .radius(1.0)
-                                .fillColor(Color.GREEN)
-                                .strokeColor(Color.GREEN)
-                ) ;
-                tempCircleList.add(circle) ;
+                circle = createCircle(marker.getPosition(), 4.0, Color.GREEN) ;
             }
+            tempCircleList.add(circle) ;    //一時的にマーカーを保存しておく
         }
+    }
+
+    /**
+     * サークルオブジェクトを作成して返す
+     * @param latlong
+     * @param radius
+     * @param color
+     * @return
+     */
+    private static Circle createCircle(LatLng latlong, double radius, int color){
+        Circle circle = mMap.addCircle(new CircleOptions()
+                        .center(latlong)
+                        .radius(radius)
+                        .fillColor(color)
+                        .strokeColor(color)
+        ) ;
+        return circle ;
     }
 
     /**
@@ -415,7 +442,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
                         = (EditText) layout.findViewById(R.id.edit_text2);
                 String title = id.getText().toString();
 
-                //ここで全部処理すべし。
+                //保存してあるデータにタイトルをつける
                 for(Long oneTimeId: oneTimeSaivingIdList) {
                     Cursor c = db.rawQuery("select * from posDB where _id in(\"" + t.to_s(oneTimeId) + "\") ;", null);
                     c.moveToFirst() ;
@@ -491,45 +518,61 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
     }
 
     @Override
+    protected void onStop(){
+        super.onStop();
+    }
+
+    @Override
     protected void onResume() {
         super.onResume();
     }
+
+    /**
+     * 完全にプログラムが終了するときに呼び出される
+     */
+    @Override
+    protected void onDestroy(){
+        //ここは必要か微妙
+        if (isSaving){
+            isSaving = false ;
+            lastLocation = null ;
+        }
+    }
+
 
     // Called when the location has changed.
     @Override
     public void onLocationChanged(Location location) {
         //@note あとで住所を入力できるように
-        if (isSaving) {
+        if (isSaving) {         //保存モードであれば
             if (lastLocation != null) {
                 if (getDistance(lastLocation, location)*100.0 > 0.2) {  //座標のズレが誤差以上であれば保存
+                    /////////////////////////
+                    float[] result = {0, 0, 0} ;
+                    getDistance(lastLocation, location, result) ;
+                    t.toast(t.to_s(result[0])+"m");
+                    ////////////////////////////
                     insertPosDataToDB(location, "empty", "");
                     lastLocation = location;       //直近のロケーションデータを更新
-                    t.toast("位置情報の保存");
-
-                    Circle circle = mMap.addCircle(new CircleOptions()
-                                .center(new LatLng(location.getLatitude(), location.getLongitude()))
-                                .radius(4.0)
-                                .fillColor(Color.BLUE)
-                                .strokeColor(Color.BLUE)
-                    ) ;
+//                    t.toast("位置情報の保存");
+                    Circle circle = createCircle(new LatLng(location.getLatitude(), location.getLongitude()), 4.0, Color.BLUE) ;
                     saivingCircleList.add(circle) ;
                 }
             }else {
                 lastLocation = location;       //直近のロケーションデータを更新
                 insertPosDataToDB(location, "empty", "");
-
-                Circle circle = mMap.addCircle(new CircleOptions()
-                                .center(new LatLng(location.getLatitude(), location.getLongitude()))
-                                .radius(4.0)
-                                .fillColor(Color.BLUE)
-                                .strokeColor(Color.BLUE)
-                ) ;
+                Circle circle = createCircle(new LatLng(location.getLatitude(), location.getLongitude()), 4.0, Color.BLUE) ;
                 saivingCircleList.add(circle) ;
             }
         }
     }
 
-    // Called when the provider status changed.
+    /**
+     * 地点を取得するようのproviderが変更されたら、locationManagerの設定も変更する
+     * @param provider
+     * @param status
+     * @param extras
+     */
     @Override
     public void onStatusChanged(String provider, int status, Bundle extras) {
         Toast.makeText(getApplicationContext(), provider, Toast.LENGTH_LONG).show();
@@ -650,7 +693,6 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
     private void setUpMap() {
 
         Criteria criteria = new Criteria() ;
-
 //        criteria.setAccuracy(Criteria.ACCURACY_LOW) ;//精度の指定
 //        criteria.setAccuracy(Criteria.NO_REQUIREMENT) ;//精度の指定
         criteria.setAccuracy(Criteria.ACCURACY_FINE) ;//精度の指定
@@ -701,24 +743,33 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
                 setMarkerListVisible(false);
                 if (markerList.size() > 0){     //現在マーカーが表示されていれば
                     //リストの中のマーカーとクリックされたところの近いところを表示していく
-                    for(Object m: markerList){
-                        LatLng mLatLng = ((Marker)m).getPosition() ;
-                        if (getDistance(mLatLng, latLng) < 0.001){
-                            t.log(t.to_s(getDistance(mLatLng, latLng))) ;
-                            ((Marker) m).setVisible(true);
-                            for (Object mm: markerList){
-                                Marker marker = ((Marker)mm) ;
-                                if (!marker.getTitle().equals("empty")) {
-                                    marker.setIcon(BitmapDescriptorFactory.defaultMarker(200)) ; // マーカーの色変更
-                                    marker.setVisible(true);
-                                }
-                            }
+                    outputMarkersNearClinck(latLng) ;
 
-                        }
-                    }
                 }
             }
         });
+    }
+
+    /**
+     * 引数の位置と近いところにあるワーカーを表示
+     * @param clickPos
+     */
+    private void outputMarkersNearClinck(LatLng clickPos){
+        for(Object m: markerList){
+            LatLng mLatLng = ((Marker)m).getPosition() ;
+            if (getDistance(mLatLng, clickPos) < 0.001){      // @todo 距離について
+                t.log(t.to_s(getDistance(mLatLng, clickPos))) ;
+                ((Marker) m).setVisible(true);
+                for (Object mm: markerList){
+                    Marker marker = ((Marker)mm) ;
+                    if (!marker.getTitle().equals("empty")) {
+                        marker.setIcon(BitmapDescriptorFactory.defaultMarker(200)) ; // マーカーの色変更
+                        marker.setVisible(true);
+                    }
+                }
+
+            }
+        }
     }
 
     /**
@@ -729,17 +780,16 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         @Override
         public Dialog onCreateDialog(Bundle savedInstanceState){
             Cursor c = db.query("posDB",null, null, null, null, null, null);
-//            Cursor c = db.query("titleDB",null, null, null, null, null, null);
-
+//            Cursor c = db.query("titleDB",null, null, null, null, null, null);        //タイトルと日付で関連付けしていたときのコード
             final CharSequence[] items = createItem(c) ;
 //            final HashMap<CharSequence, String> itemsHash = createItemHash(c) ;
-
             AlertDialog.Builder builder = new AlertDialog.Builder(getActivity()) ;
             builder.setItems(items, new DialogInterface.OnClickListener() {
                 Cursor c = db.query("posDB",null, null, null, null, null, null);
-                //                Cursor c = db.query("titleDB",null, null, null, null, null, null);
+                //                Cursor c = db.query("titleDB",null, null, null, null, null, null);   //タイトルと日付で関連付けしていたときのコード
                 @Override
                 public void onClick(DialogInterface dialogInterface, int i) {
+
                     setMarkerListVisible(false);
                     deleteLineList(lineList);
                     markerList = new ArrayList<Marker>();   //マーカーの初期化
@@ -753,32 +803,30 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
                             String lat = c.getString(c.getColumnIndex("lat"));
                             String lot = c.getString(c.getColumnIndex("lot"));
                             String posName = c.getString(c.getColumnIndex("posName"));
-
                             String posMemo = c.getString(c.getColumnIndex("posMemo"));
                             LatLng location = new LatLng(Float.valueOf(lat).floatValue(), Float.valueOf(lot).floatValue());
                             BitmapDescriptor icon = null ;
                             if (!posName.equals("empty")) {   //タイトルが入力されていれば
-//                                icon = BitmapDescriptorFactory.fromResource(R.drawable.icon_109850);
+//                                icon = BitmapDescriptorFactory.fromResource(R.drawable.icon_109850);      //自分の用意した画像用
                                 icon = BitmapDescriptorFactory.defaultMarker(200) ;
                             }
                             MarkerOptions options = createMarkerOptions(location, posName, posMemo, icon);
-
                             mMarker = mMap.addMarker(options);
+
                             //もしタイトルが入力されていれば、マーカーを表示する
-                            if (!posName.equals("empty")){
+                            if (!posName.equals("empty"))
                                 mMarker.setVisible(true);
-                            }else{
+                            else
                                 mMarker.setVisible(false) ;
-                            }
+
                             markerList.add(mMarker) ;
                             markerHash.put(mMarker, id) ;
-//                                setMarkerVisible(true, id);
+//                          setMarkerVisible(true, id);
                         }
                     }
-//                    drawLines(markerList) ;
+                    drawLines(markerList) ;
 //                    setMarkerListVisible(false);
                     moveCameraPos(markerList) ;
-
                 }
             }) ;
 
@@ -791,7 +839,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
                     lv.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
                         @Override
                         public boolean onItemLongClick(AdapterView<?> adapterView, View view, int i, long l) {
-                            DialogFragment alertDlg = TitleDialog.newInstance(String.valueOf(items[i]));
+                            DialogFragment alertDlg = DialogForTitleLongClick.newInstance(String.valueOf(items[i]) );
                             alertDlg.show(getFragmentManager(), "test");
                             return true;
                         }
@@ -802,7 +850,12 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
 //            return builder.create() ;
         }
 
-        //日付のリストを作る。CharSequenceじゃないとダメみたいなのでCharSequence使う
+        /**
+         * 日付のリストを作る。
+         * CharSequenceじゃないとダメみたいなのでCharSequence使う
+         * @param c
+         * @return
+         */
         private CharSequence[] createItem(Cursor c){
             ArrayList<CharSequence> titleList = new ArrayList<CharSequence>() ;
 
@@ -947,6 +1000,120 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         }
     }
 
+    /**
+     * リストのタイトルを長押ししたときに呼び出される
+     */
+    public static class DialogForTitleLongClick extends DialogFragment{
+
+        public static DialogForTitleLongClick newInstance(String title){
+            DialogForTitleLongClick myDialogFragment = new DialogForTitleLongClick() ;
+            Bundle bunlde = new Bundle() ;
+            bunlde.putString("title", title) ;
+            myDialogFragment.setArguments(bunlde);
+            return myDialogFragment ;
+        }
+
+        @Override
+        public Dialog onCreateDialog(Bundle savedInstanceState){
+            CharSequence[] items = {"edit", "delete"} ;
+            AlertDialog.Builder builder = new AlertDialog.Builder(getActivity()) ;
+            builder.setItems(items, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialogInterface, int i) {
+                    switch (i) {
+                        case 0:
+                            Toast.makeText(getActivity(), "edit", Toast.LENGTH_LONG).show();
+                            editData();
+                            break;
+                        case 1:
+                            Toast.makeText(getActivity(), "delete", Toast.LENGTH_LONG).show();
+                            deleteData();
+                            deleteLineList(lineList);   //現在描かれいるラインを消す
+                            drawLines(markerList);      //もう一度ラインを絵画
+                            break;
+                        default:
+                            break;
+
+                    }
+                    drawLines(markerList);  //ラインを書き直す
+                }
+            }) ;
+            return builder.create() ;
+        }
+
+        /**
+         *マーカーデータを消すことができるメソッド
+         */
+        private void editData(){
+            final int dataId = getArguments().getInt("id") ;
+            final Marker marker = getMarkerById(dataId);
+
+
+            LayoutInflater inflater = getActivity().getLayoutInflater() ;
+            final View layout = inflater.inflate(  R.layout.save_pos_data,null);
+
+            AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+            builder.setTitle("test");
+            builder.setView(layout);
+            builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    EditText posName = (EditText) layout.findViewById(R.id.edit_text);
+//                    posName.setText(marker.getTitle());
+                    EditText posMemo = (EditText) layout.findViewById(R.id.edit_text2);
+//                    posName.setText(marker.getSnippet());
+                    String name = posName.getText().toString();
+                    String memo = posMemo.getText().toString();
+
+//                    Cursor c = db.rawQuery("select * from posDB where _id in(\"" + getArguments().getString("title")  + "\") ;", null);
+
+                    Cursor c = db.query("posDB",null, null, null, null, null, null);
+                    c.moveToFirst() ;
+                    //以下変えたほうがいいかも
+                    while(c.moveToNext()) {
+                        if (c.getString(c.getColumnIndex("title")).equals(getArguments().getString("title"))) {
+                            int id = c.getInt(c.getColumnIndex("_id"));
+                            String lat = c.getString(c.getColumnIndex("lat"));
+                            String lot = c.getString(c.getColumnIndex("lot"));
+                            String posName1 = c.getString(c.getColumnIndex("posName"));
+                            String posMemo1 = c.getString(c.getColumnIndex("posMemo"));
+                            String date = c.getString(c.getColumnIndex("date"));
+                            LatLng location = new LatLng(Float.valueOf(lat).floatValue(), Float.valueOf(lot).floatValue());
+                            BitmapDescriptor icon = null ;
+
+                            ContentValues values = new ContentValues();
+
+//                    values.put("_id", String.valueOf(dataId)) ;
+                            values.put("lat", valueOf(location.latitude));
+                            values.put("lot", valueOf(location.longitude));
+                            values.put("posName", valueOf(posName1));
+                            values.put("posMemo", valueOf(posMemo1));
+                            values.put("date", String.valueOf(date));
+                            values.put("title", String.valueOf(name)+":"+String.valueOf(date));
+
+                            db.update("posDB", values, "_id=\"" + String.valueOf(id) + "\"", null);
+                        }
+                    }
+                }
+            });
+            builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+
+                }
+            });
+            builder.create().show();
+
+        }
+
+        /**
+         *マーカーデータを消すことができるメソッド
+         */
+        private void deleteData(){
+            int dataId = getArguments().getInt("id") ;
+            deleteMarker(markerList, dataId);
+        }
+    }
 
     /**
      *

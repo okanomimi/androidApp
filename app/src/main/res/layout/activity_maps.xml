@@ -36,14 +36,14 @@
             android:layout_gravity="center"
             android:id="@+id/openMapData" />
 
-        <Button
-            android:background="@drawable/normal_button"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="delete"
-            android:layout_gravity="center"
-            android:id="@+id/deleteButton" />
+        <!--<Button-->
+            <!--android:background="@drawable/normal_button"-->
+            <!--android:layout_width="0dp"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:layout_weight="1"-->
+            <!--android:text="delete"-->
+            <!--android:layout_gravity="center"-->
+            <!--android:id="@+id/deleteButton" />-->
 
     </LinearLayout>
 
