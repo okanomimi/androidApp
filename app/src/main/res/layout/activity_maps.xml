@@ -4,11 +4,14 @@
     <!--tools:context="com.example.okano56.test.MapsActivity"-->
     <!--android:name="com.google.android.gms.maps.SupportMapFragment" />-->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:map="http://schemas.android.com/apk/res-auto"
+    xmlns:bootstrap="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#000000"
-    android:orientation="vertical" >
+    android:orientation="vertical"
+    android:weightSum="1">
+
+
 
 
     <LinearLayout
@@ -16,26 +19,50 @@
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         >
-
         <!--android:layout_width="123dp"-->
-        <Button
+        <!--<Button-->
+            <!--android:background="@drawable/normal_button"-->
+            <!--android:layout_width="0dp"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:layout_weight="1"-->
+            <!--android:text="保存開始"-->
+            <!--android:layout_gravity="center"-->
+            <!--android:id="@+id/saveMapData" />-->
+
+        <!--<Button-->
+
+            <!--android:background="@drawable/normal_button"-->
+            <!--android:layout_width="0dp"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:layout_weight="1"-->
+            <!--android:text="記録表示"-->
+            <!--android:layout_gravity="center"-->
+            <!--android:id="@+id/openMapData" />-->
+
+
+        <com.beardedhen.androidbootstrap.BootstrapButton
+
             android:background="@drawable/normal_button"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="start"
+            android:text="保存開始"
+            android:id="@+id/saveMapData"
+            bootstrap:bb_icon_right="fa-android"
+            bootstrap:bb_type="default"
             android:layout_gravity="center"
-            android:id="@+id/saveMapData" />
-
-        <Button
+            />
+        <com.beardedhen.androidbootstrap.BootstrapButton
             android:background="@drawable/normal_button"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="print"
+            android:text="データ表示"
+            android:id="@+id/openMapData"
+            bootstrap:bb_icon_right="fa-android"
+            bootstrap:bb_type="default"
             android:layout_gravity="center"
-            android:id="@+id/openMapData" />
-
+            />
         <!--<Button-->
             <!--android:background="@drawable/normal_button"-->
             <!--android:layout_width="0dp"-->
@@ -45,14 +72,33 @@
             <!--android:layout_gravity="center"-->
             <!--android:id="@+id/deleteButton" />-->
 
-    </LinearLayout>
 
-    <fragment
+    <!--<fragment-->
+        <!--android:id="@+id/map"-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="0dp"-->
+        <!--android:layout_margin="4dp"-->
+        <!--android:layout_weight="0.07"-->
+        <!--class="com.google.android.gms.maps.SupportMapFragment"/>-->
+    </LinearLayout>
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_weight="1.11">
+        <fragment
         android:id="@+id/map"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
+        android:layout_height="match_parent"
         android:layout_margin="4dp"
         android:layout_weight="0.07"
         class="com.google.android.gms.maps.SupportMapFragment"/>
 
+        <TextView
+            android:layout_width="72dp"
+            android:layout_height="75dp"
+            android:text="New Text"
+            android:id="@+id/textView3"
+            android:layout_gravity="right|bottom" />
+    </FrameLayout>
 </LinearLayout>
