@@ -6,6 +6,8 @@ import android.util.Log;
 import android.widget.Button;
 import android.widget.Toast;
 
+import java.math.BigDecimal;
+
 /**
  * Created by okano56 on 2015/06/07.
  * this class is my tool of google map API
@@ -40,6 +42,11 @@ public class TkyJavaLibs {
 
     //文字列に変換用
     public String to_s(double data){
+       return String.valueOf(data)  ;
+    }
+
+    //文字列に変換用
+    public String to_s(BigDecimal data){
        return String.valueOf(data)  ;
     }
 

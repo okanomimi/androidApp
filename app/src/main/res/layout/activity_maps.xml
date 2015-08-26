@@ -5,6 +5,7 @@
     <!--android:name="com.google.android.gms.maps.SupportMapFragment" />-->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:bootstrap="http://schemas.android.com/apk/res-auto"
+    xmlns:bootstrapbutton="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#000000"
@@ -12,40 +13,19 @@
     android:weightSum="1">
 
 
-
-
     <LinearLayout
         android:orientation="horizontal"
-        android:layout_width="fill_parent"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        >
-        <!--android:layout_width="123dp"-->
-        <!--<Button-->
-            <!--android:background="@drawable/normal_button"-->
-            <!--android:layout_width="0dp"-->
-            <!--android:layout_height="wrap_content"-->
-            <!--android:layout_weight="1"-->
-            <!--android:text="保存開始"-->
-            <!--android:layout_gravity="center"-->
-            <!--android:id="@+id/saveMapData" />-->
-
-        <!--<Button-->
-
-            <!--android:background="@drawable/normal_button"-->
-            <!--android:layout_width="0dp"-->
-            <!--android:layout_height="wrap_content"-->
-            <!--android:layout_weight="1"-->
-            <!--android:text="記録表示"-->
-            <!--android:layout_gravity="center"-->
-            <!--android:id="@+id/openMapData" />-->
+        android:weightSum="1" >
 
 
         <com.beardedhen.androidbootstrap.BootstrapButton
 
             android:background="@drawable/normal_button"
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
+            android:layout_weight="0.5"
             android:text="保存開始"
             android:id="@+id/saveMapData"
             bootstrap:bb_icon_right="fa-android"
@@ -54,51 +34,73 @@
             />
         <com.beardedhen.androidbootstrap.BootstrapButton
             android:background="@drawable/normal_button"
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
+            android:layout_weight="0.5"
             android:text="データ表示"
             android:id="@+id/openMapData"
             bootstrap:bb_icon_right="fa-android"
             bootstrap:bb_type="default"
             android:layout_gravity="center"
             />
-        <!--<Button-->
-            <!--android:background="@drawable/normal_button"-->
-            <!--android:layout_width="0dp"-->
-            <!--android:layout_height="wrap_content"-->
-            <!--android:layout_weight="1"-->
-            <!--android:text="delete"-->
-            <!--android:layout_gravity="center"-->
-            <!--android:id="@+id/deleteButton" />-->
 
-
-    <!--<fragment-->
-        <!--android:id="@+id/map"-->
-        <!--android:layout_width="match_parent"-->
-        <!--android:layout_height="0dp"-->
-        <!--android:layout_margin="4dp"-->
-        <!--android:layout_weight="0.07"-->
-        <!--class="com.google.android.gms.maps.SupportMapFragment"/>-->
     </LinearLayout>
-    <FrameLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
-        android:layout_weight="1.11">
-        <fragment
+
+    <!--<FrameLayout-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:layout_gravity="center_horizontal"-->
+        <!--android:layout_weight="1.11">-->
+
+    <fragment
         android:id="@+id/map"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_margin="4dp"
-        android:layout_weight="0.07"
-        class="com.google.android.gms.maps.SupportMapFragment"/>
+        android:layout_height="120pt"
+        android:layout_weight="0.75"
+        class="com.google.android.gms.maps.SupportMapFragment"
+        >
+        </fragment>
 
-        <TextView
-            android:layout_width="72dp"
-            android:layout_height="75dp"
-            android:text="New Text"
-            android:id="@+id/textView3"
-            android:layout_gravity="right|bottom" />
-    </FrameLayout>
+
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_height="wrap_content"
+            android:layout_width="match_parent"
+            android:layout_weight = "0.2"
+            android:weightSum= "1"
+            android:layout_gravity="center_horizontal|bottom">
+
+        <view
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_weight="0.7"
+            android:background="#E2F4FB"
+            class="com.beardedhen.androidbootstrap.FontAwesomeText"
+            android:id="@+id/debugText"
+            android:layout_gravity="center_horizontal|bottom" />
+         <view
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_weight="0.3"
+            android:background="#E2F4FB"
+            class="com.beardedhen.androidbootstrap.FontAwesomeText"
+            android:id="@+id/providerText"
+            android:layout_gravity="center_horizontal|bottom" />
+
+
+
+        </LinearLayout>
+
+        <!--<com.beardedhen.androidbootstrap.BootstrapText-->
+        <!--android:id="@+id/textView3"-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:layout_weight="0.33"-->
+        <!--android:layout_margin="0dp"-->
+        <!--android:hint="rounded"-->
+        <!--bootstrapbutton:be_roundedCorners="true"-->
+        <!--android:gravity="center"-->
+        <!--bootstrapbutton:be_state="success"-->
+        <!--/>-->
+    <!--</FrameLayout>-->
 </LinearLayout>
