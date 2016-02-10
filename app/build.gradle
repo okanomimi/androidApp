@@ -30,4 +30,6 @@ dependencies {
     //    compile ':AndroidBootstrap'
     //    compile 'com.beardedhen:androidbootstrap:+'
     compile 'com.beardedhen:androidbootstrap:1.2.3'
+//    compile 'com.google.android.gms:play-services-ads:7.5.0'
+    compile 'com.google.android.gms:play-services-ads:7.0.0'
 }
