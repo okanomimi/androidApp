@@ -588,7 +588,7 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
                 String title = id.getText().toString();
 
                 Cursor c = db.rawQuery("select * from posDB where dataId in(\"" + t.to_s(dataId) + "\") ;", null);
-                c.moveToFirst() ;
+                //c.moveToFirst() ;
                 //以下変えたほうがいいかも
                 while(c.moveToNext()) {
                     ContentValues values = new ContentValues();
