@@ -6,6 +6,7 @@ import android.app.Dialog;
 import android.app.DialogFragment;
 import android.app.Notification;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.ContentValues;
 import android.content.Context;
@@ -37,6 +38,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.beardedhen.androidbootstrap.BootstrapButton;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.AdView;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -154,13 +157,14 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         providerText.setHeight(providerText.getHeight());
 
         //ステータスバー関係
-//        PendingIntent pending = PendingIntent.getActivity(this, 0, i, 0) ;
+        PendingIntent pending = PendingIntent.getActivity(this, 0, intent, 0) ;
         n = new Notification.Builder(this)
                 .setContentTitle("記録中")
                 .setContentText("旅記録により記録中")
                 .setSmallIcon(R.drawable.pin66)
                 .setAutoCancel(true)
                 .setOngoing(true)
+                .setContentIntent(pending)
                 .build() ;
 //        n = new Notification();   //ステータスバーに通知用
 //        n.icon = R.drawable.pin66  ;
@@ -254,9 +258,9 @@ public class MapsActivity extends FragmentActivity implements LocationListener{
         //GPSが有効かどうかの判定
         gpsStartUp() ;
         //以下、広告
-//        AdView mAdView = (AdView) findViewById(R.id.adView);
-//        AdRequest adRequest = new AdRequest.Builder().build();
-//        mAdView.loadAd(adRequest);
+        AdView mAdView = (AdView) findViewById(R.id.adView);
+        AdRequest adRequest = new AdRequest.Builder().build();
+        mAdView.loadAd(adRequest);
         try{
             SharedPreferences pref = getPreferences(MODE_PRIVATE);
             dataId = pref.getInt("dataId", 0);
